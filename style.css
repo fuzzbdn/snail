@@ -1,1 +1,499 @@
+:root {
+    --bg-color: #eef2f7;
+    --card-bg: #ffffff;
+    --primary-color: #0078d4;
+    --primary-hover: #005a9e;
+    --text-color: #111827;
+    --text-muted: #6b7280;
+    --border-color: #dbe3ea;
+    --danger-color: #dc3545;
+    --success-color: #28a745;
+    --focus-ring: rgba(0, 120, 212, 0.12);
+}
+
+body {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 24px;
+    line-height: 1.5;
+}
+
+/* --- Layout & Card --- */
+.card {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    padding: 28px;
+    border-radius: 12px;
+    box-shadow: 0 6px 22px rgba(16, 24, 40, 0.06);
+}
+
+h1, h2 { margin-top: 0; font-weight: 600; color: #111; }
+h3 {
+    margin-top: 30px; margin-bottom: 15px;
+    font-size: 18px; border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+/* --- Navigering --- */
+.nav-links { margin-bottom: 20px; font-size: 14px; }
+.nav-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    margin-right: 15px;
+    font-weight: 600;
+}
+.nav-links a:hover { text-decoration: underline; }
+
+.nav-menu {
+        display: flex;              /* Lägger barnen på rad */
+        justify-content: space-between; /* Knuffar isär dem: en till vänster, en till höger */
+        align-items: center;        /* Ser till att de hamnar snyggt i höjdled (mitten) */
+        padding: 10px 0;           /* Lite luft uppe och nere */
+        margin-bottom: 20px;        /* Luft under hela raden */
+    }
+
+    /* Valfritt: Gör tillbaka-länken lite snyggare */
+    .nav-menu a {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .nav-menu a:hover {
+        text-decoration: underline;
+    }
+
+
+
+
+/* --- Grid & Formulär --- */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 28px; }
+.full-width { grid-column: 1 / -1; }
+
+label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+    font-family: inherit;
+    margin-bottom: 15px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* Datumfält-inställningar */
+input[type="date"] {
+    cursor: pointer;
+    position: relative;
+}
+
+textarea { min-height: 100px; resize: vertical; }
+
+/* --- Knappar --- */
+.actions { display: flex; gap: 12px; margin-top: 18px; align-items: center; }
+.footer-row { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+
+button {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn-primary { background: var(--primary-color); color: white; }
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-ghost { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
+.btn-ghost:hover { background: #f8f9fa; border-color: #c7d0d9; }
+
+.btn-danger { color: var(--danger-color); border-color: var(--danger-color); }
+.btn-danger:hover { background: #fff5f5; }
+
+.btn-success { background: var(--success-color); color: white; }
+
+/* --- Tabeller --- */
+.control-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin-top: 10px; }
+.control-table th { text-align: left; font-size: 13px; color: #555; padding: 0 4px 8px; vertical-align: bottom; }
+.control-table td { vertical-align: top; padding: 0 4px; }
+.control-table .label-cell { white-space: nowrap; width: 1%; padding-top: 9px; font-weight: 600; }
+
+/* --- Listor (Radera-sidan) --- */
+.delete-list { list-style: none; padding: 0; }
+.delete-item {
+    background: #fff; border: 1px solid var(--border-color);
+    padding: 15px; border-radius: 8px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.item-title { font-weight: 600; display: block; }
+.item-meta { font-size: 13px; color: var(--text-muted); }
+
+/* --- Helpers --- */
+.note { color: var(--text-muted); font-size: 13px; }
+.km-row { display: flex; gap: 8px; align-items: center; }
+.km-row input { width: 120px; }
+#errorLog, #passerarText { display: none; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+#errorLog { background: #ffe6e6; color: #cc0000; border: 1px solid #ffcccc; }
+#passerarText { background: #f9f9f9; color: #555; border: 1px solid #eee; }
+
+/* --- Responsivitet --- */
+@media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+    .row { flex-direction: column; }
+}
+
+/* =========================================
+   PROFESSIONELL UTSKRIFTSDESIGN (REPORT STYLE)
+   ========================================= */
+@media print {
+    /* 1. Dölj allt som inte hör hemma i ett dokument */
+    .nav-menu, 
+    .no-print, 
+    button, 
+    .footer-row,
+    .actions,
+    #passerar, /* Gömmer själva dropdownen för "passerar" om du vill */
+    #passerarText {
+        display: none !important;
+    }
+
+    /* 2. Dokument-layout (A4) */
+    @page {
+        size: A4 portrait;
+        margin: 2cm; /* Generösa marginaler ser lyxigare ut */
+    }
+
+    body {
+        background: white !important;
+        font-family: 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif !important;
+        font-size: 11pt;
+        color: #000;
+        margin: 0 !important;
+        line-height: 1.4;
+    }
+
+    /* Ta bort webb-stilen (skuggor, rundade hörn) */
+    .card, .container {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* 3. Rubriker - Snygg och strikt typografi */
+    h2 {
+        font-size: 20pt;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 15px;
+    }
+
+    h3 {
+        font-size: 14pt;
+        margin-top: 25px;
+        margin-bottom: 10px;
+        color: #333;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 5px;
+        page-break-after: avoid;
+    }
+
+    /* 4. "Grid"-sektionen (Detaljer) -> Omvandla till snygga textblock */
+    .grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 kolumner */
+        gap: 20px 30px !important; /* Luft mellan uppgifterna */
+        margin-bottom: 20px;
+    }
+
+    /* Gör om Label + Input till "Rubrik + Värde" */
+    .grid div {
+        margin-bottom: 5px;
+        page-break-inside: avoid;
+    }
+
+    label {
+        display: block;
+        font-size: 9pt;
+        color: #666 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+        font-weight: normal !important;
+    }
+
+    /* Magin: Gör input till fet text utan rutor */
+    input[type="text"], 
+    input[type="number"], 
+    input[type="date"], 
+    select, 
+    textarea {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        
+        font-size: 12pt !important;
+        font-weight: 700 !important; /* Fet text för datat */
+        color: #000 !important;
+        
+        width: 100%;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none; /* Dölj pilen på select */
+    }
+
+    /* Fixa höjden på textarea så all text syns vid utskrift */
+    textarea {
+        resize: none;
+        overflow: hidden;
+        min-height: 1.5em;
+        white-space: pre-wrap; /* Behåll radbrytningar */
+    }
+
+    /* 5. Tabeller - Modern "Ren" Look (Horisontella linjer) */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 15px;
+        font-size: 10pt;
+        page-break-inside: auto;
+    }
+
+    thead th {
+        background-color: transparent !important;
+        border-bottom: 2px solid #000 !important;
+        text-align: left;
+        padding: 8px 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 9pt;
+    }
+
+    tbody td {
+        border-bottom: 1px solid #ddd !important; /* Tunn grå linje mellan rader */
+        padding: 10px 4px;
+        vertical-align: top;
+    }
+    
+    /* Ta bort sista kolumnen (soptunnan) */
+    th:last-child, td:last-child {
+        display: none !important;
+    }
+
+    /* Inputs inuti tabeller */
+    table input, table select {
+        font-size: 10pt !important;
+        font-weight: normal !important; /* Vanlig textvikt i tabeller */
+    }
+
+    /* Signatur-rutorna (Control table) */
+    .control-table {
+        margin-top: 40px;
+        page-break-inside: avoid;
+    }
+    .control-table td {
+        border: 1px solid #ccc !important; /* Behåll rutor för signaturer */
+        height: 40px; /* Plats att skriva på */
+    }
+    .control-table .label-cell {
+        background-color: #f9f9f9 !important;
+        font-weight: bold;
+        width: 25%;
+    }
+}
+
+
+
+/* --- TABELLSTABILITET (Globalt) --- */
+.route-table {
+    table-layout: fixed; 
+    width: 100%;
+    border-collapse: collapse;
+}
+
+
+
+.route-table select {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+}
+/* --- INLOGGNINGSSIDA --- */
+
+/* Centrera allt på sidan */
+.login-page {
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 350px;
+    text-align: center;
+}
+
+.logo-icon {
+    font-size: 40px;
+    color: #4CAF50;
+    margin-bottom: 10px;
+}
+
+.login-header h2 {
+    margin: 10px 0 5px;
+    color: #333;
+}
+
+.login-header p {
+    color: #777;
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+}
+
+/* Input med ikoner */
+.input-icon-wrap {
+    position: relative;
+}
+
+.input-icon-wrap i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+}
+
+.input-icon-wrap input {
+    width: 100%;
+    padding: 10px 10px 10px 35px; /* Plats för ikonen */
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.btn-login {
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    width: 100%;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background 0.3s;
+}
+
+.btn-login:hover {
+    background-color: #45a049;
+}
+
+.error-text {
+    color: #e74c3c;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+/* Fusklapp styling */
+.test-users {
+    background: #e8f5e9;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    border: 1px solid #c8e6c9;
+    color: #2e7d32;
+    text-align: left;
+    width: 350px;
+}
+.test-users ul {
+    margin: 5px 0 0
+}
+
+/* =========================================
+   TOAST NOTIFICATIONS
+   ========================================= */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Så man kan klicka igenom om det behövs */
+}
+
+.toast {
+    min-width: 250px;
+    max-width: 400px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease forwards;
+    border-left: 5px solid var(--primary-color);
+    pointer-events: auto;
+}
+
+/* Färgvarianter för olika typer av notiser */
+.toast-success { border-left-color: var(--success-color); }
+.toast-error { border-left-color: var(--danger-color); }
+.toast-info { border-left-color: var(--primary-color); }
+
+.toast-icon {
+    font-size: 20px;
+}
+
+.toast-message {
+    line-height: 1.4;
+    white-space: pre-wrap; /* Behåller radbrytningar från din text */
+}
+
+/* Animationer */
+@keyframes slideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
+}
 
