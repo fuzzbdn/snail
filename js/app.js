@@ -7,7 +7,7 @@ import { initGranskaPage } from './pages/granska.js';
 import { initAktivaPage } from './pages/aktiva.js';
 import { initSavedPage } from './pages/debug.js';
 
-// Vi kör koden direkt - type="module" väntar automatiskt in HTML-laddningen
+// Koden körs direkt (type="module" väntar automatiskt tills HTML är inläst)
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     initLoginPage(loginForm);
