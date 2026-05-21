@@ -1,0 +1,219 @@
+/* --- GRUNDLÄGGANDE VARIABLER & RESET (Från ditt exempel) --- */
+:root {
+    --bg-color: #eef2f7;
+    --card-bg: #ffffff;
+    --primary-color: #0078d4;
+    --primary-hover: #005a9e;
+    --text-color: #111827;
+    --border-color: #dbe3ea;
+    --danger-color: #dc3545;
+}
+
+body {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 24px;
+    line-height: 1.5;
+}
+
+.card {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.nav-menu {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+.nav-menu a { text-decoration: none; color: var(--primary-color); font-weight: 500; }
+
+h2 { margin-top: 0; color: #333; font-weight: 600; }
+.note { color: #666; font-size: 0.95rem; }
+
+/* --- KONTROLLPANEL (Snyggare Inputs) --- */
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) auto; /* 3 fält + knappar */
+    gap: 20px;
+    align-items: end; /* Linjera knappar med input-fälten */
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+input[type="text"], select {
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus, select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+/* Knappar */
+button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.btn-primary { background: var(--primary-color); color: white; }
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-ghost { background: transparent; color: #666; border: 1px solid #ccc; }
+.btn-ghost:hover { background: #f5f5f5; color: #333; }
+
+.btn-secondary { background: #e1e4e8; color: #333; }
+.btn-secondary:hover { background: #d1d5db; }
+
+
+/* --- KARTAN (Clean Style) --- */
+
+.map-container {
+    display: flex;
+    justify-content: center; /* Centrera kartan horisontellt */
+    background: #fff; /* Vit bakgrund */
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 10px;
+    overflow: hidden; /* Dölj scrollbars utanför wrappern */
+}
+
+.map-wrapper {
+    overflow-x: auto; /* Scrolla bara om kartan är bredare än skärmen */
+    overflow-y: hidden;
+    max-width: 100%;
+    /* Anpassad scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: #ccc #fff;
+}
+
+svg { 
+    display: block; 
+    background-color: #ffffff; /* Vit bakgrund på SVG */
+}
+
+/* SPÅR (Mörka linjer för kontrast mot vit bakgrund) */
+.track { 
+    stroke: #374151; /* Mörkgrå (Cool Gray 700) */
+    stroke-width: 4; 
+    fill: none; 
+    stroke-linecap: square; 
+}
+
+/* Gula Utbredningen */
+.range-track-line {
+    stroke: #fbbf24; /* Amber 400 - Varm gul */
+    stroke-width: 10; /* Bredare än spåret */
+    opacity: 0.5;    
+    stroke-linecap: butt;
+    pointer-events: none;
+}
+
+.range-border {
+    stroke: var(--danger-color); 
+    stroke-width: 2;
+    stroke-dasharray: 4,3;
+}
+
+/* SYMBOLER (Anpassade för ljus bakgrund) */
+.symbol-group { cursor: ew-resize; }
+.symbol-group:hover .symbol-shape { fill: var(--primary-color); stroke: var(--primary-hover); }
+
+.symbol-shape {
+    fill: #9ca3af; /* Ljusare grå */
+    stroke: #4b5563; /* Mörk kant */
+    stroke-width: 1.5px;
+}
+
+.symbol-label {
+    fill: #111827; 
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Segoe UI Mono', monospace;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.station-name {
+    fill: #000000; /* Mycket ljus grå (vattenstämpel-effekt) */
+    stroke: #e5e7eb;
+    stroke-width: 1px;
+    font-size: 20px;
+    font-weight: 900;
+    pointer-events: none;
+    text-anchor: middle;
+   /* text-transform: uppercase; */
+}
+
+/* Statusraden */
+.status-bar {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #666;
+    padding-bottom: 10px;
+}
+.status-item strong { color: #000; font-weight: 700; margin-left: 5px;}
+.highlight-text { color: var(--primary-color) !important; }
+
+/* Drag & Drop Linjer */
+.offset-line { stroke: #333; stroke-width: 1; stroke-dasharray: 3, 3; opacity: 0.6; pointer-events: none; }
+.offset-text { fill: var(--danger-color); font-size: 11px; font-weight: bold; text-anchor: middle; pointer-events: none; }
+.track-highlight { stroke: #fbbf24; stroke-width: 5; opacity: 1; pointer-events: none; }
+.km-marker { font-size: 10px; fill: #999; pointer-events: none; }
+
+/* --- Ny styling för avstånd till utbredning --- */
+.distance-line {
+    stroke: #0078d4; /* Blå färg för att skilja från röd/gul */
+    stroke-width: 2;
+    stroke-dasharray: 4, 2;
+    marker-end: url(#arrowhead); /* Om man vill ha pil, annars ta bort */
+    pointer-events: none;
+}
+
+.distance-text {
+    fill: #0078d4;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: 'Segoe UI', sans-serif;
+    text-anchor: middle;
+    pointer-events: none;
+    text-shadow: 0px 0px 3px #fff; /* Vit outline för läsbarhet */
+}

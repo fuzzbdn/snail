@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hantera användare</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body id="users-page">
+    
+<div class="card">
+    <div class="nav-menu">
+        <a href="home.html">⬅ Tillbaka</a>
+        <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 20px;">
+        <div>
+            <h2>👥 Hantera Användare</h2>
+            <p class="note">Lägg till eller redigera behöriga beställare och användare.</p>
+        </div>
+        <button onclick="exportUsersToCode()" class="btn-ghost" title="Exportera till kod">
+            <i class="fa-solid fa-file-code"></i> Spara till fil
+        </button>
+    </div>
+
+    <div style="background:#f8f9fa; padding:25px; border-radius:8px; border:1px solid #e9ecef; margin-bottom:30px;">
+        <h3 id="userFormTitle" style="margin-top:0; border:none;">Lägg till ny användare</h3>
+        
+        <form id="userForm">
+            <input type="hidden" id="editIndex" value="-1"> 
+            
+            <div class="grid">
+                <div>
+                    <label for="u_name">Namn</label>
+                    <input type="text" id="u_name" placeholder="För- och efternamn" required>
+                </div>
+                <div>
+                    <label for="u_email">E-post</label>
+                    <input type="email" id="u_email" placeholder="namn@exempel.se" required>
+                </div>
+
+                <div>
+                    <label for="u_user">Användarnamn</label>
+                    <input type="text" id="u_user" placeholder="Användarnamn" required>
+                </div>
+                <div>
+                    <label for="u_pass">Lösenord</label>
+                    <input type="text" id="u_pass" placeholder="Lösenord" required>
+                </div>
+                
+                <div>
+                    <label for="u_role">Roll</label>
+                    <select id="u_role">
+                        <option value="Planerare">Planerare</option>
+                        <option value="Projektör">Projektör</option>
+                        <option value="Tågledare">Tågledare</option>
+                        <option value="Admin">Administratör</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="u_company">Företag</label>
+                    <input type="text" id="u_company" placeholder="Företagsnamn (Valfritt)">
+                </div>
+                
+                <div style="grid-column: 1 / -1; margin-top: 10px;">
+                    <button type="submit" class="btn-primary" style="width:100%;">
+                        <i class="fa-solid fa-floppy-disk"></i> Spara Användare
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="userListContainer">
+        <table class="control-table">
+            <thead>
+                <tr>
+                    <th>Namn</th>
+                    <th>Företag</th> <th>E-post</th>
+                    <th>Användare</th>
+                    <th>Lösenord</th>
+                    <th>Roll</th>
+                    <th style="text-align:right;">Åtgärd</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

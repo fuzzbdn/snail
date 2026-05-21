@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driftplatsutbredning - Objekt 1370</title>
+    <link rel="stylesheet" href="styledp.css">
+    <style>
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            height: 42px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 0 12px;
+            min-width: 200px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .checkbox-item input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #0078d4;
+        }
+    </style>
+</head>
+<body id="visual-page">
+
+<div class="card">
+    <div class="nav-menu no-print">
+        <a href="home.html">⬅ Tillbaka</a>
+        <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
+    </div>
+
+    <h2>Driftplatsutbredning Snigel poc</h2>
+    <div class="note" style="margin-bottom: 25px;">
+        Ange intervall. Spåralternativen uppdateras automatiskt beroende på vald sträcka.
+    </div>
+
+    <div class="control-grid">
+        <div class="input-group">
+            <label for="inpStart">Från (Km)</label>
+            <input type="text" id="inpStart" placeholder="Ex. 1357+200" value="1357+100">
+        </div>
+        <div class="input-group">
+            <label for="inpEnd">Till (Km)</label>
+            <input type="text" id="inpEnd" placeholder="Ex. 1357+900" value="1357+800">
+        </div>
+        <div class="input-group">
+            <label>Spårval</label>
+            <div id="track-selector" class="checkbox-group">
+                <span style="color:#999; font-style:italic;">Ange sträcka och klicka Visa...</span>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-primary" onclick="drawRangeHighlight()">Visa Utbredning</button>
+            <button class="btn-ghost" onclick="clearRange()">Rensa</button>
+        </div>
+    </div>
+
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+
+    <div class="status-bar">
+        <span class="status-item">Signal: <strong id="uiId">-</strong></span>
+        <span class="status-item">Position: <strong id="uiKm">-</strong></span>
+        <span class="status-item">Justering: <strong id="uiOffset" class="highlight-text">0 m</strong></span>
+    </div>
+
+    <div class="map-container">
+        <div class="map-wrapper" id="mapWrapper">
+            <svg id="svgMap"></svg>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;"></div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

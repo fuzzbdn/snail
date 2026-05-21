@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sparad Data (Debug)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body id="saved-page">
+
+<div class="card">
+    <div class="nav-menu">
+        <a href="home.html">⬅ Tillbaka</a>
+        <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
+    </div>
+
+    <h2>💾 Systemdata (Debug)</h2>
+    <p class="note">
+        Denna sida visar all data som ligger sparad i webbläsarens lokala minne just nu. 
+        <br><strong>OBS:</strong> Denna vy är endast till för teknisk granskning och kommer tas bort vid lansering.
+    </p>
+
+    <div style="position: relative;">
+        <button onclick="copySavedData()" class="btn-ghost" style="position: absolute; right: 10px; top: 10px;">
+            <i class="fa-regular fa-copy"></i> Kopiera JSON
+        </button>
+        <pre id="savedDataDisplay" style="background: #2d2d2d; color: #76e068; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 13px; max-height: 70vh;"></pre>
+    </div>
+
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

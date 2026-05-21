@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meny - SNIGEL</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Specifik stil för menyn för att matcha planera-sidans "rena" look */
+        .menu-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .menu-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .menu-header p {
+            color: #666;
+        }
+
+        /* Rutnät för knapparna */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        /* Korten (Knapparna) */
+        .menu-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Samma skugga som formulären brukar ha */
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            border-left: 5px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left-color: #0078d4; /* Blå accentfärg vid hover */
+        }
+
+        .menu-card .icon-box {
+            font-size: 2.5rem;
+            color: #0078d4;
+            margin-bottom: 15px;
+        }
+
+        .menu-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .menu-card p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+            <div id="user-display" style="max-width: 1200px; margin: 0 auto; padding: 10px 20px; text-align: right; font-size: 0.9em; color: #666;"></div>
+        <div class="menu-header">
+            <span style="font-size: 3rem;">🐌</span>
+            <h1>SNIGEL</h1>
+            <p><B>S</B>ystem för <B>N</B>edsättning <B>I</B>ntegrerat <B>G</B>enom <B>E</B>RTMS-<B>L</B>ösningar</p>
+        </div>
+
+        <div class="menu-grid">
+            
+            <a href="planera.html" class="menu-card">
+                <div class="icon-box"><i class="fa-solid fa-calendar-days"></i></div>
+                <h3>Planera Nedsättning</h3>
+                <p>Skapa underlag, definiera sträckor och spara data lokalt.</p>
+            </a>
+
+            <a href="projektera.html" class="menu-card">
+                <div class="icon-box"><i class="fa-solid fa-pen-ruler"></i></div>
+                <h3>Projektera Nedsättning</h3>
+                <p>Projektera nedsättningar. Generera XML-filer.</p>
+            </a>
+
+			<a href="review.html" class="menu-card"> 
+				<div class="icon-box"><i class="fa-solid fa-user-secret"></i></div>
+				<h3>Granska Nedsättning</h3>
+				<p>Granska och godkänn projekterade nedsättningar.</p>
+			</a>  
+
+			<a href="active.html" class="menu-card">
+				<div class="icon-box" style="color: #28a745;"><i class="fa-solid fa-play"></i></div>
+				<h3>Visa Aktiva Nedsättningar</h3>
+				<p>Lista över alla aktiva och granskade hastighetsnedsättningar.</p>
+			</a>
+
+			<a href="radera.html" class="menu-card"> <div class="icon-box"><i class="fa-solid fa-trash-can"></i></div>
+                <h3>Hantera Sparade</h3>
+                <p>Se status på alla sparade nedsättningar.</p>
+            </a>
+			
+            <a href="users.html" class="menu-card">
+                <div class="icon-box"><i class="fa-solid fa-users-gear"></i></div>
+                <h3>Hantera Godkända Beställare</h3>
+                <p>Lägg till och ta bort godkända användare.</p>
+            </a>
+
+<a href="visual.html" id="admin-visual-link" class="menu-card" style="border-left-color: #555; display: none;">
+				<div class="icon-box" ><i class="fa-solid fa-route"></i></div>
+				<h3>Visa Snigelspår</h3>
+				<p>Grafisk översikt (Admin).</p>
+			</a>
+
+			<a href="saved.html" id="admin-debug-link" class="menu-card" style="border-left-color: #555; display: none;">
+				<div class="icon-box" style="color: #555;"><i class="fa-solid fa-bug"></i></div>
+				<h3>Systemdata (Debug)</h3>
+				<p>Granska rådata och JSON (För tekniker).</p>
+			</a>
+
+        </div>
+
+    </div>
+
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

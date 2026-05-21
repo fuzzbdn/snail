@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logga in - Tågsystem</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="login-page">
+
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="login-header">
+                <span class="logo-icon" style="font-style: normal;">🐌</span>
+                <h2>Logga in</h2>
+                <p style="font-size: 38px; font-weight: bold; text-align: center;">SNIGEL</p>
+				<p style="font-size: 10px; font-weight: bold; text-align: center;">POC 0.41</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Användarnamn</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="username" placeholder="Ange användarnamn" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Lösenord</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" placeholder="Ange lösenord" required>
+                    </div>
+                </div>
+
+                <p id="error-msg" class="error-text" style="display:none;">Fel användarnamn eller lösenord!</p>
+
+                <button type="submit" class="btn-login">Logga in</button>
+            </form>
+        </div>
+
+
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hantera poster</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="radera-page"><div class="card">
+<div class="nav-menu">
+    <a href="home.html">⬅ Tillbaka</a>
+    
+    <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
+</div>
+
+    <h2>Hantera sparade poster</h2>
+    <p class="note">Här kan du ta bort gamla nedsättningar från webbläsarens minne.</p>
+
+    <div id="listContainer"></div>
+
+    <hr style="margin-top: 30px;">
+    <div style="text-align: right;">
+        <button onclick="deleteAll()" class="btn-ghost btn-danger">🗑️ Rensa ALLA poster</button>
+    </div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
