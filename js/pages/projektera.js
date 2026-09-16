@@ -82,8 +82,15 @@ function setupProjekteraUI() {
         set("identitet", `${entry.start_km || 0}${entry.start_m || 0}_${entry.slut_km || 0}${entry.slut_m || 0}_${entry.sth || 0}`);
         set("stracka", `${entry.start_km || 0}+${entry.start_m || 0} - ${entry.slut_km || 0}+${entry.slut_m || 0}`);
 
-        if (entry.stallverkstyp) set("stallverkstyp", entry.stallverkstyp);
-        if (entry.rbc) set("rbc", entry.rbc);
+        // --- UPPDATERAD KOD: Ladda in ställverk och RBC dynamiskt ---
+        if (entry.stallverkstyp) {
+            set("stallverkstyp", entry.stallverkstyp);
+            window.updateRbcOptions(entry.stallverkstyp, entry.rbc);
+        } else {
+            window.updateRbcOptions(""); 
+            set("rbc", "");
+        }
+
         if (entry.passerar) set("passerar", entry.passerar);
 
         restoreRoutes(entry.routeData);
@@ -107,6 +114,36 @@ function setupProjekteraUI() {
         if (passerarText) passerarText.style.display = (this.value === 'Ja') ? 'block' : 'none';
     });
 
+    // --- NY KOD: Hantera dynamisk RBC-dropdown ---
+    const stallverkstypEl = document.getElementById('stallverkstyp');
+    const rbcEl = document.getElementById('rbc');
+
+    window.updateRbcOptions = function(stallverkVal, selectedRbc = "") {
+        if (!rbcEl) return;
+        
+        rbcEl.innerHTML = "<option value=''>Välj...</option>"; // Rensa alltid listan först
+        
+        let options = [];
+        if (stallverkVal === '95') {
+            options = ['X4GV', 'X4LIN', 'X4BLN', 'X4KRA'];
+        } else if (stallverkVal === 'M11') {
+            options = ['X4HP'];
+        }
+
+        // Fyll på med de tillåtna alternativen
+        options.forEach(opt => {
+            const isSelected = (opt === selectedRbc) ? "selected" : "";
+            rbcEl.innerHTML += `<option value="${opt}" ${isSelected}>${opt}</option>`;
+        });
+    };
+
+    if (stallverkstypEl) {
+        stallverkstypEl.addEventListener('change', function() {
+            window.updateRbcOptions(this.value);
+        });
+    }
+    // --- SLUT PÅ NY KOD ---
+
     if (saveBtn) {
         saveBtn.addEventListener("click", () => {
             if (currentEntryIndex === null) return;
@@ -118,8 +155,8 @@ function setupProjekteraUI() {
             entryToUpdate.stallverkstyp = document.getElementById("stallverkstyp")?.value || "";
             entryToUpdate.rbc = document.getElementById("rbc")?.value || "";
             entryToUpdate.passerar = document.getElementById("passerar")?.value || "";
-			entryToUpdate.identitet = document.getElementById("identitet")?.value || "";
-			
+            entryToUpdate.identitet = document.getElementById("identitet")?.value || "";
+            
             const savedBlocks = [];
             document.querySelectorAll(".route-block").forEach(block => {
                 const rows = [];
