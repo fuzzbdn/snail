@@ -2,29 +2,86 @@ import { CSV_DATA } from '../core/data.js';
 import { Utils } from '../core/storage.js';
 
 export function initVisualPage() {
+    let page = document.getElementById("visual-page");
+    if (!page) return;
+
+    // Bygger upp exakt det gränssnitt som fanns på originalbilden
     let container = document.getElementById("visualContainer");
     if (!container) {
-        document.body.innerHTML = `
-            <div style="padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; min-height: 100vh;">
-                <div class="no-print" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h1 style="color: #1e293b; margin: 0 0 5px 0;">Spårplan</h1>
-                        <p style="color: #64748b; margin: 0; font-size: 0.9em;">Genererad från anläggningsdata. Håll muspekaren över objekt för detaljer.</p>
+        const uiHtml = `
+            <div style="background: #f4f6f9; min-height: 100vh; padding: 40px 20px; font-family: 'Segoe UI', sans-serif;">
+                <div style="max-width: 1200px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    
+                    <!-- Sökfält och Knappar -->
+                    <div style="display: flex; gap: 20px; align-items: flex-end; margin-bottom: 30px;">
+                        <div>
+                            <label style="display:block; font-size:11px; color:#666; margin-bottom:5px; text-transform:uppercase;">Från (km)</label>
+                            <input type="text" id="vis-from" value="1356+000" style="padding:10px; border:1px solid #ccc; border-radius:4px; width:150px;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:11px; color:#666; margin-bottom:5px; text-transform:uppercase;">Till (km)</label>
+                            <input type="text" id="vis-to" value="1358+900" style="padding:10px; border:1px solid #ccc; border-radius:4px; width:150px;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:11px; color:#666; margin-bottom:5px; text-transform:uppercase;">Spårval</label>
+                            <input type="text" id="vis-track" placeholder="Ange sträcka och klicka Visa..." style="padding:10px; border:1px solid #ccc; border-radius:4px; width:250px;">
+                        </div>
+                        <button id="btn-visa" style="padding:10px 20px; background:#0078d4; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Visa Utbredning</button>
+                        <button id="btn-rensa" style="padding:10px 20px; background:#fff; color:#333; border:1px solid #ccc; border-radius:4px; cursor:pointer;">Rensa</button>
                     </div>
-                    <a href="home.html" style="padding: 8px 16px; background: #3b82f6; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">Tillbaka</a>
+                    
+                    <!-- Infopanel -->
+                    <div style="font-size:13px; margin-bottom:20px; color:#333;">
+                        Signal: <span id="lbl-signal">-</span> &nbsp;&nbsp;&nbsp;&nbsp; 
+                        Position: <span id="lbl-pos">-</span> &nbsp;&nbsp;&nbsp;&nbsp; 
+                        Justering: <strong style="color:#0078d4;">0 m</strong>
+                    </div>
+                    
+                    <!-- SVG Karta -->
+                    <div id="svg-container" style="border: 1px solid #eaeaea; border-radius: 8px; padding: 40px 20px; overflow-x: auto; background: #fff; min-height: 450px; display: flex; align-items: center;">
+                        <!-- Renderas här -->
+                    </div>
+                    
+                    <!-- Instruktioner -->
+                    <div style="font-size:13px; color:#666; margin-top:20px;">
+                        Klicka på en signal: 1 klick=Start (Grön), 2 klick=Slut (Röd).
+                    </div>
                 </div>
-                <div id="visualContainer" style="overflow-x: auto; white-space: nowrap; cursor: grab; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 60px 20px;"></div>
             </div>
         `;
-        container = document.getElementById("visualContainer");
+        
+        // Letar upp navbar och lägger inyn UI direkt under
+        const navbar = document.querySelector('.navbar');
+        if (navbar) {
+            navbar.insertAdjacentHTML('afterend', uiHtml);
+        } else {
+            document.body.insertAdjacentHTML('beforeend', uiHtml);
+        }
     }
 
-    if (!CSV_DATA) return;
+    renderSVG();
 
+    // Event listeners
+    document.getElementById('btn-rensa')?.addEventListener('click', () => {
+        document.getElementById('vis-from').value = '';
+        document.getElementById('vis-to').value = '';
+        document.getElementById('vis-track').value = '';
+        renderSVG();
+    });
+
+    document.getElementById('btn-visa')?.addEventListener('click', () => {
+        renderSVG();
+    });
+}
+
+function renderSVG() {
+    if (!CSV_DATA) return;
+    const container = document.getElementById("svg-container");
+    
     const lines = CSV_DATA.split(/\r?\n/).filter(r => r.trim());
     const delimiter = lines[0].includes(";") ? ";" : ",";
     const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
-
+    
     const idx = {
         plstr: headers.indexOf("pl/str"),
         km: headers.indexOf("bdl kmtal till"),
@@ -33,7 +90,7 @@ export function initVisualPage() {
         spr: headers.indexOf("spr")
     };
 
-    const objects = lines.slice(1).map(line => {
+    let objects = lines.slice(1).map(line => {
         const cols = line.split(delimiter).map(c => c.trim());
         return {
             station: cols[idx.plstr],
@@ -47,114 +104,118 @@ export function initVisualPage() {
 
     if (objects.length === 0) return;
 
-    // Dimensioner och marginaler
-    const minMeters = objects[0].meters - 300;
-    const maxMeters = objects[objects.length - 1].meters + 300;
+    // Filtrera på KM-inmatning
+    const filterFrom = Utils.toMeters(document.getElementById('vis-from')?.value || "");
+    const filterTo = Utils.toMeters(document.getElementById('vis-to')?.value || "");
     
-    const PX_PER_M = 0.6;  // Utsträckning på bredden
-    const TRACK_GAP = 120; // Avstånd mellan spår i höjdled
+    if (!isNaN(filterFrom) && filterFrom > 0) objects = objects.filter(o => o.meters >= filterFrom - 200);
+    if (!isNaN(filterTo) && filterTo > 0) objects = objects.filter(o => o.meters <= filterTo + 200);
+
+    if (objects.length === 0) {
+        container.innerHTML = "<p style='color:#666;'>Inga objekt hittades i det angivna intervallet.</p>";
+        return;
+    }
+
+    // Uträkning av canvas-storlek
+    const minMeters = objects[0].meters - 200;
+    const maxMeters = objects[objects.length - 1].meters + 200;
+    
+    const PX_PER_M = 0.8;
+    const TRACK_GAP = -70; // Negativt värde gör att spår 1 ritas ovanför spår 0
     const Y_BASE = 250;
     const W_px = (maxMeters - minMeters) * PX_PER_M;
     const getX = (m) => (m - minMeters) * PX_PER_M;
 
-    // Funktion för att rita ett "järnvägsspår" (mörkgrå bas + vita streckade syllar)
-    const drawTrack = (x1, y1, x2, y2) => `
-        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#475569" stroke-width="8" stroke-linecap="round" />
-        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#f8fafc" stroke-width="4" stroke-dasharray="8 8" />
-    `;
+    const strokeColor = "#4a5568"; // Den mörkblågrå färgen från originalet
+    const strokeWidth = "4";
 
-    // Starta SVG med drop-shadow-filter för 3D-känsla
-    let svg = `<svg width="${W_px}" height="550" style="background: transparent; font-family: sans-serif; min-width: 100%;">
-        <defs>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.2"/>
-            </filter>
-        </defs>
-    `;
+    let svg = `<svg width="${W_px}" height="400" style="background: transparent; font-family: sans-serif;">`;
+    
+    // Huvudspår (Spår 0)
+    svg += `<line x1="0" y1="${Y_BASE}" x2="${W_px}" y2="${Y_BASE}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="butt" />`;
 
-    // 1. Rita huvudspåret genom hela ritytan
-    svg += drawTrack(0, Y_BASE, W_px, Y_BASE);
-
-    // 2. Hantera varje driftplats (stationer och sidospår)
     const stations = [...new Set(objects.map(o => o.station))];
+    
     stations.forEach(st => {
         const stObjs = objects.filter(o => o.station === st);
         const stMin = Math.min(...stObjs.map(o => o.meters));
         const stMax = Math.max(...stObjs.map(o => o.meters));
         const midX = getX((stMin + stMax) / 2);
 
-        // Stationsskylt med mörk bakgrund ovanför spåret
-        svg += `
-            <g transform="translate(${midX}, ${Y_BASE - 180})">
-                <rect x="-80" y="-20" width="160" height="40" rx="4" fill="#1e293b" filter="url(#shadow)"/>
-                <text x="0" y="5" fill="#fff" font-weight="bold" font-size="16" letter-spacing="2" text-anchor="middle">${st.toUpperCase()}</text>
-                <line x1="0" y1="20" x2="0" y2="180" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4" />
-            </g>
-        `;
+        // Stationsnamn i mitten
+        svg += `<text x="${midX}" y="${Y_BASE - 120}" fill="#000" font-weight="bold" font-size="16" letter-spacing="1" text-anchor="middle">${st}</text>`;
 
-        // Utritning av sidospår (-1 och 1)
-        [-1, 1].forEach(tNum => {
+        // Sidospår och Växlar
+        const tracks = [...new Set(stObjs.map(o => o.track))].filter(t => t !== 0);
+        tracks.forEach(tNum => {
             const tObjs = stObjs.filter(o => o.track === tNum);
-            if (tObjs.length > 0) {
-                const tMin = getX(Math.min(...tObjs.map(o => o.meters)) - 150);
-                const tMax = getX(Math.max(...tObjs.map(o => o.meters)) + 150);
-                const y = Y_BASE + (tNum * TRACK_GAP);
-                const slope = 60; // Längd på vinkeln för växeln
+            const tMin = getX(Math.min(...tObjs.map(o => o.meters)) - 80);
+            const tMax = getX(Math.max(...tObjs.map(o => o.meters)) + 80);
+            const y = Y_BASE + (tNum * TRACK_GAP);
+            const slope = 40;
 
-                // Själva sidospåret
-                svg += drawTrack(tMin + slope, y, tMax - slope, y);
-                
-                // Anslutningslinjerna in mot huvudspåret (ritas utan vita syllar för enklare "växel-look")
-                svg += `<line x1="${tMin}" y1="${Y_BASE}" x2="${tMin + slope}" y2="${y}" stroke="#475569" stroke-width="6" stroke-linecap="round" />`;
-                svg += `<line x1="${tMax}" y1="${Y_BASE}" x2="${tMax - slope}" y2="${y}" stroke="#475569" stroke-width="6" stroke-linecap="round" />`;
-            }
+            svg += `<line x1="${tMin + slope}" y1="${y}" x2="${tMax - slope}" y2="${y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+            svg += `<line x1="${tMin}" y1="${Y_BASE}" x2="${tMin + slope}" y2="${y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+            svg += `<line x1="${tMax}" y1="${Y_BASE}" x2="${tMax - slope}" y2="${y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
         });
     });
 
-    // 3. Placera ut alla anläggningsobjekt
-    objects.forEach(o => {
+    // Objekt och Signaler
+    objects.forEach((o) => {
         const x = getX(o.meters);
         const y = Y_BASE + (o.track * TRACK_GAP);
-        const isUpper = o.track <= 0; // Objekt på spår 0 och -1 ritas pekande uppåt för att inte krocka
-
-        svg += `<g transform="translate(${x}, ${y})" style="cursor: help;">`;
-        
-        // Native tooltip
-        svg += `<title>${o.type}: ${o.name}\nKilometer: ${o.km}\nSpår: ${o.track}</title>`;
-
-        // Kilometer-angivelse i en liten ljusgrå badge
-        svg += `
-            <rect x="-24" y="${isUpper ? -75 : 62}" width="48" height="16" rx="2" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
-            <text x="0" y="${isUpper ? -64 : 73}" font-size="9" fill="#475569" font-family="monospace" font-weight="bold" text-anchor="middle">${o.km}</text>
-        `;
+        const isUpper = o.track < 0; 
 
         if (o.type.toLowerCase() === "signal") {
-            // Detaljerad Signal: Mast, svart huvud, och två "LED"-lampor (Grön/Röd)
+            // Logik för att vända pilen mot/med baserat på namn
+            const isLeftPointing = o.name.includes('L') || (parseInt(o.name) % 2 === 0);
+            const points = isLeftPointing ? "-8,-6 8,0 -8,6" : "8,-6 -8,0 8,6"; 
+
             svg += `
-                <line x1="0" y1="0" x2="0" y2="${isUpper ? -45 : 45}" stroke="#94a3b8" stroke-width="4" />
-                <rect x="-9" y="${isUpper ? -55 : 25}" width="18" height="26" rx="3" fill="#0f172a" filter="url(#shadow)" />
-                <circle cx="0" cy="${isUpper ? -47 : 33}" r="4" fill="#10b981" />
-                <circle cx="0" cy="${isUpper ? -35 : 45}" r="4" fill="#ef4444" />
-                <text x="0" y="${isUpper ? -82 : 93}" font-size="12" font-weight="bold" fill="#0f172a" text-anchor="middle">${o.name}</text>
+                <g transform="translate(${x}, ${y})" class="sig-group" data-name="${o.name}" data-km="${o.km}" style="cursor:pointer;">
+                    <!-- Klickzon för att göra det enklare att klicka -->
+                    <circle cx="0" cy="0" r="15" fill="transparent" />
+                    <!-- Själva signaltriangeln -->
+                    <polygon points="${points}" fill="#cbd5e1" stroke="${strokeColor}" stroke-width="1.5" class="sig-poly" />
+                    
+                    <text x="0" y="${isUpper ? -20 : 25}" font-size="11" font-weight="bold" fill="#000" text-anchor="middle">${o.name}</text>
+                    <text x="0" y="${isUpper ? -10 : 35}" font-size="9" fill="#94a3b8" text-anchor="middle">${o.km}</text>
+                </g>
             `;
         } else if (o.type.toLowerCase() === "stoppbock") {
-            // Stoppbock: Röd frontbarriär
             svg += `
-                <rect x="-8" y="-12" width="16" height="24" fill="#94a3b8" />
-                <rect x="-10" y="-14" width="20" height="8" fill="#ef4444" filter="url(#shadow)" />
-                <text x="0" y="${isUpper ? -25 : 35}" font-size="11" font-weight="bold" fill="#ef4444" text-anchor="middle">${o.name}</text>
-            `;
-        } else if (o.type.toLowerCase() === "växel") {
-            // Växel: Gul/Orange markeringscirkel med vit text inuti
-            svg += `
-                <circle cx="0" cy="0" r="10" fill="#f59e0b" stroke="#fff" stroke-width="2" filter="url(#shadow)" />
-                <text x="0" y="${isUpper ? -20 : 25}" font-size="11" font-weight="bold" fill="#b45309" text-anchor="middle">${o.name}</text>
+                <g transform="translate(${x}, ${y})">
+                    <line x1="0" y1="-8" x2="0" y2="8" stroke="${strokeColor}" stroke-width="3" />
+                    <text x="0" y="${isUpper ? -15 : 25}" font-size="10" fill="#000" text-anchor="middle">${o.name}</text>
+                </g>
             `;
         }
-
-        svg += `</g>`;
     });
 
     svg += `</svg>`;
     container.innerHTML = svg;
+
+    // Interaktivitet för signalerna (Grön/Röd)
+    document.querySelectorAll('.sig-group').forEach(el => {
+        el.addEventListener('click', function() {
+            const poly = this.querySelector('.sig-poly');
+            const name = this.getAttribute('data-name');
+            const km = this.getAttribute('data-km');
+            
+            let state = parseInt(this.getAttribute('data-state') || '0');
+            state = (state + 1) % 3; // Cyklar mellan 0, 1, 2
+            this.setAttribute('data-state', state);
+
+            if (state === 0) {
+                poly.setAttribute('fill', '#cbd5e1'); // Grå (Avmarkerad)
+            } else if (state === 1) {
+                poly.setAttribute('fill', '#22c55e'); // Grön (Start)
+            } else if (state === 2) {
+                poly.setAttribute('fill', '#ef4444'); // Röd (Slut)
+            }
+
+            document.getElementById('lbl-signal').innerText = name;
+            document.getElementById('lbl-pos').innerText = km;
+        });
+    });
 }
