@@ -6,6 +6,7 @@ import { initUsersPage } from './pages/users.js';
 import { initGranskaPage } from './pages/granska.js';
 import { initAktivaPage } from './pages/aktiva.js';
 import { initSavedPage } from './pages/debug.js';
+import { initVisualPage } from './pages/visual.js'; // <--- NY RAD
 
 // Koden körs direkt (type="module" väntar automatiskt tills HTML är inläst)
 const loginForm = document.getElementById('loginForm');
@@ -22,3 +23,4 @@ if (document.getElementById('users-page')) initUsersPage();
 if (document.getElementById('granska-page')) initGranskaPage();
 if (document.getElementById('aktiva-page')) initAktivaPage();
 if (document.getElementById('saved-page')) initSavedPage();
+if (document.getElementById('visual-page')) initVisualPage(); // <--- NY RAD
