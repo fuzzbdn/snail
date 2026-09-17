@@ -3,7 +3,7 @@ import { Utils } from '../core/storage.js';
 
 export function initVisualPage() {
     // 1. Hitta eller skapa en container för kartan
-    let container = document.getElementById("visualContainer");
+    let container = document.getElementById("visualContainer"); 
     if (!container) {
         document.body.innerHTML = `
             <div style="padding: 20px; font-family: sans-serif; background: #fff;">
