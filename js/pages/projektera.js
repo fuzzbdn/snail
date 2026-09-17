@@ -1,6 +1,7 @@
 import { StorageManager, Utils, getEntryStatus } from '../core/storage.js';
 import { showToast } from '../core/ui.js';
-import '../core/xml-generator.js'; // <--- NY! Importerar XML-logiken
+import '../core/xml-generator.js'; // Importerar XML-logiken så knappen i HTML fungerar
+import { CSV_DATA } from '../core/data.js'; // Laddar in anläggningsdatan säkert
 
 // ==========================================
 // GLOBALA VARIABLER FÖR PROJEKTERING
@@ -53,6 +54,7 @@ function setupProjekteraUI() {
             select.innerHTML = "<option>Ingen data hittades</option>";
         }
     };
+    
     loadDropdown();
 
     select.addEventListener("change", (e) => {
@@ -69,7 +71,7 @@ function setupProjekteraUI() {
         
         currentEntryIndex = parseInt(idx);
         const entry = allData[currentEntryIndex];
-        if (!entry) return; // Defensiv programmering ifall posten saknas
+        if (!entry) return; // Defensiv programmering ifall posten raderats i annan flik
         
         const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ''; };
         
@@ -82,15 +84,8 @@ function setupProjekteraUI() {
         set("identitet", `${entry.start_km || 0}${entry.start_m || 0}_${entry.slut_km || 0}${entry.slut_m || 0}_${entry.sth || 0}`);
         set("stracka", `${entry.start_km || 0}+${entry.start_m || 0} - ${entry.slut_km || 0}+${entry.slut_m || 0}`);
 
-        // --- UPPDATERAD KOD: Ladda in ställverk och RBC dynamiskt ---
-        if (entry.stallverkstyp) {
-            set("stallverkstyp", entry.stallverkstyp);
-            window.updateRbcOptions(entry.stallverkstyp, entry.rbc);
-        } else {
-            window.updateRbcOptions(""); 
-            set("rbc", "");
-        }
-
+        if (entry.stallverkstyp) set("stallverkstyp", entry.stallverkstyp);
+        if (entry.rbc) set("rbc", entry.rbc);
         if (entry.passerar) set("passerar", entry.passerar);
 
         restoreRoutes(entry.routeData);
@@ -100,6 +95,7 @@ function setupProjekteraUI() {
             saveBtn.style.cursor = "pointer";
             saveBtn.style.backgroundColor = "#007bff";
         }
+        
         mainStartMeters = Utils.toMeters(`${entry.start_km}+${entry.start_m}`);
         mainEndMeters = Utils.toMeters(`${entry.slut_km}+${entry.slut_m}`);
         
@@ -114,49 +110,26 @@ function setupProjekteraUI() {
         if (passerarText) passerarText.style.display = (this.value === 'Ja') ? 'block' : 'none';
     });
 
-    // --- NY KOD: Hantera dynamisk RBC-dropdown ---
-    const stallverkstypEl = document.getElementById('stallverkstyp');
-    const rbcEl = document.getElementById('rbc');
-
-    window.updateRbcOptions = function(stallverkVal, selectedRbc = "") {
-        if (!rbcEl) return;
-        
-        rbcEl.innerHTML = "<option value=''>Välj...</option>"; // Rensa alltid listan först
-        
-        let options = [];
-        if (stallverkVal === '95') {
-            options = ['X4GV', 'X4LIN', 'X4BLN', 'X4KRA'];
-        } else if (stallverkVal === 'M11') {
-            options = ['X4HP'];
-        }
-
-        // Fyll på med de tillåtna alternativen
-        options.forEach(opt => {
-            const isSelected = (opt === selectedRbc) ? "selected" : "";
-            rbcEl.innerHTML += `<option value="${opt}" ${isSelected}>${opt}</option>`;
-        });
-    };
-
-    if (stallverkstypEl) {
-        stallverkstypEl.addEventListener('change', function() {
-            window.updateRbcOptions(this.value);
-        });
-    }
-    // --- SLUT PÅ NY KOD ---
-
     if (saveBtn) {
         saveBtn.addEventListener("click", () => {
             if (currentEntryIndex === null) return;
 
             const currentData = StorageManager.getAll();
             const entryToUpdate = currentData[currentEntryIndex];
-            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            if (!entryToUpdate) return;
+            
+            let currentUser = {};
+            try {
+                currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            } catch (e) {
+                console.error("Kunde inte läsa currentUser", e);
+            }
 
             entryToUpdate.stallverkstyp = document.getElementById("stallverkstyp")?.value || "";
             entryToUpdate.rbc = document.getElementById("rbc")?.value || "";
             entryToUpdate.passerar = document.getElementById("passerar")?.value || "";
-            entryToUpdate.identitet = document.getElementById("identitet")?.value || "";
-            
+			entryToUpdate.identitet = document.getElementById("identitet")?.value || "";
+			
             const savedBlocks = [];
             document.querySelectorAll(".route-block").forEach(block => {
                 const rows = [];
@@ -175,6 +148,7 @@ function setupProjekteraUI() {
                 });
                 savedBlocks.push(rows);
             });
+            
             entryToUpdate.routeData = savedBlocks;
             entryToUpdate.status = "projekterad";
             entryToUpdate.projectedDate = new Date().toISOString();
@@ -204,11 +178,14 @@ function setupProjekteraUI() {
 // DATA & TABELL-LOGIK
 // ==========================================
 function initCsvData() {
-    if (typeof window.CSV_DATA === 'undefined') {
-        console.error("Saknar CSV_DATA. Se till att data.js laddas korrekt.");
+    if (!CSV_DATA) {
+        console.error("Saknar CSV_DATA. Se till att data.js laddas och exporterar korrekt.");
         return;
     }
-    const lines = window.CSV_DATA.split(/\r?\n/).filter(r => r.trim());
+    
+    const lines = CSV_DATA.split(/\r?\n/).filter(r => r.trim());
+    if (lines.length === 0) return;
+    
     const delimiter = lines[0].includes(";") ? ";" : ",";
     const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
     
