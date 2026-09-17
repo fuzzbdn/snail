@@ -115,9 +115,6 @@ export function checkLoginStatus() {
         
         const planerareInput = document.getElementById('planerare');
         if (planerareInput) planerareInput.value = user.name;
-
-        // --- KOLLA NOTIFIERINGAR ---
-        checkNotifications(user);
     }
 }
 
@@ -127,33 +124,4 @@ export function logout() {
 }
 
 // Fäst utloggningen på window så att länken i menyn fortfarande fungerar
-window.logout = logout; 
-
-// --- FUNKTIONER FÖR NOTIFIERINGAR (BLINKA TAB) ---
-function checkNotifications(user) {
-    if (user.role === 'Planerare' || user.role === 'Admin') {
-        const allData = StorageManager.getAll();
-        const unhandledCount = allData.filter(e => getEntryStatus(e) === 'planerad').length;
-
-        if (unhandledCount > 0) {
-            startBlinkingTitle(unhandledCount);
-        }
-    }
-}
-
-let titleInterval = null;
-function startBlinkingTitle(count) {
-    if (titleInterval) clearInterval(titleInterval); 
-    
-    const originalTitle = document.title;
-    let isAlert = false;
-
-    titleInterval = setInterval(() => {
-        if (isAlert) {
-            document.title = `(${count}) 🔔 ÅTGÄRD KRÄVS! - ${originalTitle}`;
-        } else {
-            document.title = originalTitle;
-        }
-        isAlert = !isAlert;
-    }, 1000); 
-}
+window.logout = logout;
