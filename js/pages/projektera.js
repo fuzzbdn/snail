@@ -154,14 +154,26 @@ function setupProjekteraUI() {
             entryToUpdate.projectedDate = new Date().toISOString();
             entryToUpdate.projekteradAv = currentUser.name || "Okänd";
 
-            const tableRows = document.querySelectorAll(".control-table tbody tr");
-            if (tableRows.length >= 2) {
-                const sakerhetsDatum = tableRows[1].querySelectorAll("input")[0]?.value;
-                const sakerhetsSign = tableRows[1].querySelectorAll("input")[1]?.value;
-                
-                if (sakerhetsSign) {
-                    entryToUpdate.sakerhetsgranskadAv = sakerhetsSign;
-                    entryToUpdate.sakerhetsgranskadDatum = sakerhetsDatum ? new Date(sakerhetsDatum).toISOString() : new Date().toISOString();
+// FIX: Hämta RÄTT tabell genom att exkludera .route-table
+            const reviewTable = document.querySelector(".control-table:not(.route-table)");
+            if (reviewTable) {
+                const tableRows = reviewTable.querySelectorAll("tbody tr");
+                if (tableRows.length >= 2) {
+                    const sakerhetsDatum = tableRows[1].querySelectorAll("input")[0]?.value;
+                    const sakerhetsSign = tableRows[1].querySelectorAll("input")[1]?.value;
+                    
+                    if (sakerhetsSign) {
+                        entryToUpdate.sakerhetsgranskadAv = sakerhetsSign;
+                        
+                        // Try/catch som extra säkerhetsnät så att en felaktig datumsträng aldrig kraschar spara-knappen
+                        try {
+                            entryToUpdate.sakerhetsgranskadDatum = sakerhetsDatum 
+                                ? new Date(sakerhetsDatum).toISOString() 
+                                : new Date().toISOString();
+                        } catch (e) {
+                            entryToUpdate.sakerhetsgranskadDatum = new Date().toISOString();
+                        }
+                    }
                 }
             }
 
