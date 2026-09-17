@@ -1,4 +1,4 @@
-﻿const CSV_DATA = `
+﻿export const CSV_DATA = `
 Pl/str;UNE;spr;Bdl kmtal till;spm;sid;Objekttyp;Objekt;obinr
 Rsi;E2;2;0+104;0;y;Signalpunktstavla ERTMS;MT 154;1519
 Rsi;E2;2;0+321;0;h;Signalpunktstavla ERTMS;MT 144;1520
