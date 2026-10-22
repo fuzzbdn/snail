@@ -85,7 +85,7 @@ export function setRangeCallback(callback) {
 
 export function formatKm(meter) {
     const k = Math.floor(meter / 1000);
-    const m = Math.round(meter % 1000); // Rundar internt av metervärdet
+    const m = Math.round(meter % 1000); 
     return `${k}+${m.toString().padStart(3, '0')}`;
 }
 
@@ -108,7 +108,9 @@ export function updateVisualRange(startKm, endKm) {
     if (isNaN(startM) || isNaN(endM)) return;
 
     currentWorkRange = { start: Math.min(startM, endM), end: Math.max(startM, endM) };
-    drawRangeHighlight(true);
+    
+    // ÄNDRAT TILL FALSE: Tvingar fram rendering av spårvalen
+    drawRangeHighlight(false);
 }
 
 // === INTERNA FUNKTIONER ===
@@ -174,10 +176,9 @@ function initMap() {
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
         
-        // Avrunda till hela meter direkt vid klick
         selectStartMeter = Math.round(pxToMeter(svgP.x)); 
         currentWorkRange = { start: selectStartMeter, end: selectStartMeter };
-        drawRangeHighlight(true);
+        drawRangeHighlight(true); // TRUE under dragning för prestanda
     });
 
     svg.addEventListener('mousemove', (e) => {
@@ -186,19 +187,22 @@ function initMap() {
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
         
-        // Avrunda till hela meter under dragningen
         const currentMeter = Math.round(pxToMeter(svgP.x));
 
         currentWorkRange = {
             start: Math.min(selectStartMeter, currentMeter),
             end: Math.max(selectStartMeter, currentMeter)
         };
-        drawRangeHighlight(true);
+        drawRangeHighlight(true); // TRUE under dragning för prestanda
     });
 
     const endSelection = () => {
         if (isSelectingRange) {
             isSelectingRange = false;
+            
+            // ÄNDRAT TILL FALSE: Tvingar fram spårvalen när man SLÄPPER musknappen
+            drawRangeHighlight(false); 
+
             if (onRangeSelected) onRangeSelected(currentWorkRange.start, currentWorkRange.end);
         }
     };
@@ -239,16 +243,23 @@ function updateTrackOptions(minM, maxM) {
 
     container.dataset.signature = signature;
     container.innerHTML = ''; 
+    
+    // NYTT: Återställ textfärgen från grått till mörkt så det syns bra
+    container.style.color = '#333'; 
 
     sortedTracks.forEach(t => {
         const lbl = document.createElement('label');
+        lbl.style.cursor = 'pointer';
+        lbl.style.display = 'flex';
+        lbl.style.alignItems = 'center';
+        lbl.style.gap = '5px';
         const chk = document.createElement('input');
         chk.type = 'checkbox';
         chk.value = t;
         chk.checked = true; 
-        chk.onchange = () => drawRangeHighlight(true);
+        chk.onchange = () => drawRangeHighlight(true); // TRUE här så kryssrutorna inte försvinner när man klickar på dem
         lbl.appendChild(chk);
-        lbl.appendChild(document.createTextNode(` Spår ${t}`));
+        lbl.appendChild(document.createTextNode(`Spår ${t}`));
         container.appendChild(lbl);
     });
 }
@@ -372,7 +383,7 @@ function drawRangeBox(minM, maxM, selectedTracks) {
     createRangeBorder(x2, boxTop, boxBottom);
 
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    const len = Math.round(maxM - minM); // Tvingar längd-etiketten till heltal
+    const len = Math.round(maxM - minM); 
     label.textContent = `Längd: ${len} m`;
     label.setAttribute("x", x1 + 10); label.setAttribute("y", boxTop - 10);
     label.setAttribute("class", "offset-text"); label.style.textAnchor = "start";
@@ -592,7 +603,5 @@ function endDrag() {
 
 function updateVisuals(sym) { const idx = symbols.indexOf(sym); const hl = document.getElementById(`hl-${idx}`); const ol = document.getElementById(`ol-${idx}`); const olTxt = document.getElementById(`ol-txt-${idx}`); if (sym.offset === 0) { hl.style.display = 'none'; ol.style.display = 'none'; olTxt.style.display = 'none'; return; } hl.style.display = 'block'; ol.style.display = 'block'; olTxt.style.display = 'block'; const baseX = meterToPx(sym.pos); const targetX = baseX + (sym.offset * PX_PER_M); const y = Y_BASE + (sym.track * TRACK_GAP); hl.setAttribute("x1", baseX); hl.setAttribute("x2", targetX); hl.setAttribute("y1", y); hl.setAttribute("y2", y); const relTargetX = sym.offset * PX_PER_M; const lineY = (sym.labelPos === -1) ? -45 : 50; ol.setAttribute("x1", 0); ol.setAttribute("y1", lineY); ol.setAttribute("x2", relTargetX); ol.setAttribute("y2", lineY); olTxt.textContent = (sym.offset > 0 ? "+" : "") + sym.offset + "m"; olTxt.setAttribute("x", relTargetX / 2); olTxt.setAttribute("y", lineY - 4); }
 function updateUI() { if(!activeSym) return; document.getElementById('uiId').textContent = activeSym.id; const kmPart = Math.floor(activeSym.pos / 1000); const mPart = activeSym.pos % 1000; document.getElementById('uiKm').textContent = `${kmPart}+${mPart.toString().padStart(3,'0')}`; const elOff = document.getElementById('uiOffset'); elOff.textContent = (activeSym.offset > 0 ? "+" : "") + activeSym.offset + " m"; elOff.style.color = activeSym.offset === 0 ? '#111827' : '#dc3545'; }
-
-// Tvingar uträkningarna att leverera exakta heltal när man klickar i pixlar på skärmen
 function meterToPx(m) { return (m - START_METER) * PX_PER_M; }
 function pxToMeter(px) { return Math.round((px / PX_PER_M) + START_METER); }
