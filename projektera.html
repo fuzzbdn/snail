@@ -5,15 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Projektering ETCS</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .track { stroke: #4b5563; stroke-width: 4px; stroke-linecap: round; }
+        .station-name { font-size: 16px; font-weight: bold; fill: #111827; font-family: sans-serif; letter-spacing: 1px; }
+        .distance-line { stroke-width: 2px; stroke-dasharray: 4; }
+        .distance-text { font-size: 12px; font-weight: bold; font-family: sans-serif; }
+        .range-track-line { stroke: #fbbf24; stroke-width: 8px; opacity: 0.5; }
+        .km-marker { font-size: 9px; fill: #9ca3af; text-anchor: middle; font-family: sans-serif; }
+        .symbol-label { font-size: 11px; font-weight: bold; fill: #111827; text-anchor: middle; font-family: sans-serif; }
+        .track-highlight { stroke: #0078d4; stroke-width: 2px; opacity: 0.5; }
+        .offset-line { stroke: #0078d4; stroke-width: 1.5px; stroke-dasharray: 2; }
+        .offset-text { font-size: 11px; fill: #0078d4; text-anchor: middle; font-family: sans-serif; }
+        .symbol-group { cursor: pointer; }
+    </style>
 </head>
 <body id="projektera-page">
 
- <div class="card">
-<div class="nav-menu" no-print>
-    <a href="home.html">⬅ Tillbaka</a>
-    
-    <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
-</div>
+<div class="card">
+    <div class="nav-menu no-print">
+        <a href="home.html">⬅ Tillbaka</a>
+        <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
+    </div>
 
     <h2>Projektering av Hastighetsnedsättning ETCS</h2>
     <div id="errorLog"></div>
@@ -29,24 +41,24 @@
         <div><label>Identitet</label><input id="identitet" readonly></div>
         <div><label>Sträcka</label><input id="stracka" readonly></div>
         <div>
-			<label>Ställverkstyp</label>
-			<select id="stallverkstyp">
+            <label>Ställverkstyp</label>
+            <select id="stallverkstyp">
                 <option value="">Välj ställverkstyp</option>
                 <option value="95">95</option>
                 <option value="M11">M11</option>
-			</select>
-		</div>
+            </select>
+        </div>
         <div>
-			<label>RBC</label>
-			<select id="rbc">
+            <label>RBC</label>
+            <select id="rbc">
                 <option value="">Välj RBC</option>
                 <option value="X4GV">X4GV</option>
                 <option value="X4LIN">X4LIN</option>
                 <option value="X4KRA">X4KRA</option>
                 <option value="X4BLN">X4BLN</option>
                 <option value="X4HP">X4HP</option>
-			</select>
-		</div>
+            </select>
+        </div>
         <div><label>STH</label><input id="sth" readonly></div>
         <div><label>Axellast</label><input id="axellast" readonly></div>
         <div><label>Tåglängd</label><input id="taglangd" readonly></div>
@@ -58,6 +70,24 @@
     <label style="margin-top:15px">Passerar nedsättningen RBC/RBC eller Systemgräns?</label>
     <select id="passerar"><option value="Nej">Nej</option><option value="Ja">Ja</option></select>
     <div id="passerarText">OBS: Projektering över gränser kräver särskild hantering.</div>
+
+    <!-- === GRAFISK VY === -->
+    <h3 style="margin-top: 30px;">Grafisk Vy (Klicka på signaler för att lägga till i tabell)</h3>
+    <div class="map-container" style="border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; background: #fff; margin-bottom: 20px;">
+        <div style="font-size:13px; color:#333; margin-bottom: 20px; display: flex; gap: 15px;">
+            <div>Signal: <strong id="uiId">-</strong></div>
+            <div>Position: <strong id="uiKm">-</strong></div>
+            <div>Justering: <strong id="uiOffset" style="color:#0078d4;">0 m</strong></div>
+        </div>
+
+        <div id="mapWrapper" style="width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
+            <svg id="svgMap"></svg>
+        </div>
+        <div id="measurement-readout" style="margin-top: 15px; font-size: 13px; color: #666;">
+            Klicka på en signal: 1 klick=Start (Grön), 2 klick=Slut (Röd).
+        </div>
+        <div id="track-selector" style="display:none;"></div> <!-- Dold men behövs för logiken i visual.js -->
+    </div>
     
     <div id="routes-container"></div>
     
@@ -75,9 +105,9 @@
     </table>
 
     <div class="footer-row no-print">
-	<button id="saveProjekteringBtn" class="btn-primary" disabled style="background-color: #6c757d; cursor: not-allowed; margin-right: auto;">
-        💾 Spara & Klarmarkera
-    </button>
+        <button id="saveProjekteringBtn" class="btn-primary" disabled style="background-color: #6c757d; cursor: not-allowed; margin-right: auto;">
+            💾 Spara & Klarmarkera
+        </button>
         <button onclick="generateXML()" class="btn-ghost">💾 Skapa XML</button>
         <button type="button" class="btn-primary" onclick="printPage()">🖨️ Skriv ut</button>
     </div>
