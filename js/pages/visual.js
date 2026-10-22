@@ -1,9 +1,7 @@
-// js/pages/visual.js 
+// js/pages/visual.js
 
-// --- KONFIGURATION ---
 const PX_PER_M = 0.6;   
 const START_METER = 1356000; 
-
 const Y_BASE = 300;     
 const TRACK_GAP = 60;   
 const SLOPE_PX = 20;    
@@ -74,8 +72,7 @@ let activeSym = null;
 let startMouseX = 0; 
 let initialOffset = 0;
 
-// --- EXPORTERADE FUNKTIONER FÖR PROJEKTERA.JS ---
-
+// === EXPORTERADE API-FUNKTIONER ===
 export let onSignalMarked = null; 
 export function setSignalCallback(callback) {
     onSignalMarked = callback;
@@ -97,15 +94,13 @@ export function initVisualMap() {
 export function updateVisualRange(startKm, endKm) {
     const startM = parseKmInput(startKm);
     const endM = parseKmInput(endKm);
-    
     if (isNaN(startM) || isNaN(endM)) return;
 
     currentWorkRange = { start: Math.min(startM, endM), end: Math.max(startM, endM) };
     drawRangeHighlight(true);
 }
 
-// --------------------------------------------------------------------------
-
+// === INTERNA FUNKTIONER ===
 function initMap() {
     elReadout = document.getElementById('measurement-readout');
 
@@ -116,7 +111,6 @@ function initMap() {
     const layerLabels = createGroup("layer-labels");
     const layerOverlay = createGroup("layer-overlay"); 
     
-    // 1. RITA SPÅR
     createLine(layerTracks, 0, Y_BASE, parseInt(svg.getAttribute('width')), Y_BASE, "track");
 
     TRACK_DEFINITIONS.forEach(def => {
@@ -213,9 +207,9 @@ function drawRangeHighlight(skipUpdateOptions = false) {
         container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
             if (chk.checked) selectedTracks.push(parseInt(chk.value));
         });
-    } else {
-        selectedTracks.push(0); // Fallback
     }
+    
+    if (selectedTracks.length === 0) selectedTracks.push(0);
 
     selectedTracks.forEach(trackNum => {
         drawHierarchicalTrack(minM, maxM, trackNum);
@@ -316,7 +310,7 @@ function drawRangeBox(minM, maxM, selectedTracks) {
     createRangeBorder(x2, boxTop, boxBottom);
 
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.textContent = `Längd på nedsättning: ${maxM - minM} m`;
+    label.textContent = `Längd: ${maxM - minM} m`;
     label.setAttribute("x", x1 + 10); label.setAttribute("y", boxTop - 10);
     label.setAttribute("class", "offset-text"); label.style.textAnchor = "start";
     label.style.fill = "#dc3545"; label.style.fontSize = "16px"; label.style.fontWeight = "bold";
@@ -530,7 +524,6 @@ function endDrag() {
         updateDistanceVisuals(activeSym);
         updateReadout(); 
 
-        // TRigga callback till projektera.js!
         let type = newMode === 1 ? 'Start' : (newMode === 2 ? 'Slut' : 'Rensad');
         if (onSignalMarked) {
             onSignalMarked(activeSym, type);
