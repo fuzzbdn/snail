@@ -2,7 +2,7 @@ import { StorageManager } from '../core/storage.js';
 import { showToast } from '../core/ui.js';
 
 // Importera vår kart-modul
-import { initVisualMap, updateVisualRange, setRangeCallback, formatKm } from './visual.js';
+import { initVisualMap, updateVisualRange, setRangeCallback, setTrackChangeCallback, formatKm } from './visual.js';
 
 // ==========================================
 // SIDA: PLANERA
@@ -12,15 +12,15 @@ export function initPlaneraPage() {
     // --- Initiera kartan och sätt upp kopplingarna ---
     initVisualMap();
 
-    // Referenser till fälten
     const elStartKm = document.getElementById('plan_start_km');
     const elStartM = document.getElementById('plan_start_m');
     const elSlutKm = document.getElementById('plan_slut_km');
     const elSlutM = document.getElementById('plan_slut_m');
+    const elSpar = document.getElementById('plan_spar');
 
     // 1. Karta -> Formulär (När man ritar en zon med musen)
     setRangeCallback((startM, endM) => {
-        const strStart = formatKm(startM); // Blir t.ex. "1357+100"
+        const strStart = formatKm(startM);
         const strSlut = formatKm(endM);
 
         if (strStart.includes('+')) {
@@ -36,7 +36,14 @@ export function initPlaneraPage() {
         }
     });
 
-    // 2. Formulär -> Karta (När man skriver manuellt)
+    // 2. Spårval i kartan -> Fyll i textfältet "Spår" automatiskt
+    setTrackChangeCallback((trackText) => {
+        if (elSpar) {
+            elSpar.value = trackText;
+        }
+    });
+
+    // 3. Formulär -> Karta (När man skriver manuellt)
     const onManualKmInput = () => {
         const sKm = elStartKm?.value || '';
         const sM = elStartM?.value || '000';
@@ -48,13 +55,11 @@ export function initPlaneraPage() {
         }
     };
     
-    // Lyssna på alla fyra inputfält
     if(elStartKm) elStartKm.addEventListener('input', onManualKmInput);
     if(elStartM) elStartM.addEventListener('input', onManualKmInput);
     if(elSlutKm) elSlutKm.addEventListener('input', onManualKmInput);
     if(elSlutM) elSlutM.addEventListener('input', onManualKmInput);
     // ---------------------------------------------------
-
 
     const fromInput = document.getElementById("from");
     if (fromInput) {
@@ -100,7 +105,6 @@ export function initPlaneraPage() {
             entry.timestamp = new Date().toISOString();
             entry.status = "planerad"; 
 
-            // --- HÄMTA INLOGGAD ANVÄNDARE & E-POST ---
             const currentUserJson = sessionStorage.getItem('currentUser');
             let userEmail = "okänd e-post";
             let userName = entry.planerare;
@@ -130,7 +134,6 @@ export function initPlaneraPage() {
             document.getElementById("to").value = "Tillsvidare"; 
             if (fromInput) fromInput.valueAsDate = new Date();
             
-            // NYTT: Rensa kartan vid skickad beställning
             updateVisualRange("0+000", "0+000"); 
         });
     }
