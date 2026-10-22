@@ -78,6 +78,17 @@ export function setSignalCallback(callback) {
     onSignalMarked = callback;
 }
 
+export let onRangeSelected = null;
+export function setRangeCallback(callback) { 
+    onRangeSelected = callback; 
+}
+
+export function formatKm(meter) {
+    const k = Math.floor(meter / 1000);
+    const m = Math.round(meter % 1000);
+    return `${k}+${m.toString().padStart(3, '0')}`;
+}
+
 export function initVisualMap() {
     svg = document.getElementById('svgMap');
     if (!svg) return; 
@@ -144,6 +155,56 @@ function initMap() {
     layerOverlay.appendChild(elDistText);
 
     symbols.forEach((s, idx) => drawSymbol(s, idx, layerSymbols, layerHighlights));
+
+    // ==============================================================
+    // NYTT: Logik för att dra upp ett område på kartan med musen
+    // ==============================================================
+    svg.style.cursor = "crosshair"; 
+    svg.style.userSelect = "none";
+
+    let isSelectingRange = false;
+    let selectStartMeter = 0;
+
+    svg.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.symbol-group')) return; // Ignorera om man klickar på en signal
+        e.preventDefault();
+        isSelectingRange = true;
+        
+        // Räkna ut exakt koordinat (hanterar scroll automatiskt)
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX; pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+        
+        selectStartMeter = pxToMeter(svgP.x);
+        currentWorkRange = { start: selectStartMeter, end: selectStartMeter };
+        drawRangeHighlight(true);
+    });
+
+    svg.addEventListener('mousemove', (e) => {
+        if (!isSelectingRange) return;
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX; pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+        const currentMeter = pxToMeter(svgP.x);
+
+        currentWorkRange = {
+            start: Math.min(selectStartMeter, currentMeter),
+            end: Math.max(selectStartMeter, currentMeter)
+        };
+        drawRangeHighlight(true);
+    });
+
+    const endSelection = () => {
+        if (isSelectingRange) {
+            isSelectingRange = false;
+            // Skicka datan till planera.js eller projektera.js via callback
+            if (onRangeSelected) onRangeSelected(currentWorkRange.start, currentWorkRange.end);
+        }
+    };
+    
+    svg.addEventListener('mouseup', endSelection);
+    svg.addEventListener('mouseleave', endSelection);
+    // ==============================================================
 }
 
 function drawFixedSiding(layer, startM, endM, fromLvl, toLvl) {
@@ -366,7 +427,7 @@ function updateDistanceVisuals(sym) {
 function updateReadout() {
     if (!elReadout) return;
     if (!currentWorkRange) {
-        elReadout.textContent = "Hämta planering för att visa utbredning.";
+        elReadout.textContent = "Dra på kartan för att välja sträcka.";
         return;
     }
 
@@ -393,12 +454,6 @@ function updateReadout() {
     elReadout.textContent = `${txtStart}      ${txtEnd}`;
 }
 
-function formatKm(meter) {
-    const k = Math.floor(meter / 1000);
-    const m = Math.round(meter % 1000);
-    return `${k}+${m.toString().padStart(3, '0')}`;
-}
-
 function updateSymbolColor(sym, index) {
     const group = document.querySelector(`.symbol-group[data-index='${index}']`);
     if(!group) return;
@@ -414,7 +469,6 @@ function updateSymbolColor(sym, index) {
 function createGroup(id) { const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.id = id; svg.appendChild(g); return g; }
 function parseKmInput(val) { if (!val) return null; val = val.toString().replace(/\s/g, '').replace(',', '.'); if (val.includes('+')) { const parts = val.split('+'); if (parts.length === 2) return parseInt(parts[0], 10) * 1000 + parseInt(parts[1], 10); } if (val.includes('.') && val.indexOf('.') < 5) return parseFloat(val) * 1000; return parseInt(val, 10); }
 function createRangeBorder(x, y1, y2) { const l = document.createElementNS("http://www.w3.org/2000/svg", "line"); l.setAttribute("x1", x); l.setAttribute("y1", y1); l.setAttribute("x2", x); l.setAttribute("y2", y2); l.setAttribute("class", "range-border"); l.setAttribute("stroke", "#dc3545"); l.setAttribute("stroke-width", "2"); l.setAttribute("stroke-dasharray", "5,5"); layerRange.appendChild(l); }
-
 function createLine(parent, x1, y1, x2, y2, cls) { const l = document.createElementNS("http://www.w3.org/2000/svg", "line"); l.setAttribute("x1", x1); l.setAttribute("y1", y1); l.setAttribute("x2", x2); l.setAttribute("y2", y2); l.setAttribute("class", cls); parent.appendChild(l); }
 function drawTrackLabel(layer, num, meterPos, trackLvl) { const x = meterToPx(meterPos); const y = Y_BASE + (trackLvl * TRACK_GAP); const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.textContent = num; txt.setAttribute("x", x); txt.setAttribute("y", y - 10); txt.setAttribute("fill", "#666"); txt.setAttribute("font-size", "14px"); txt.setAttribute("font-weight", "bold"); layer.appendChild(txt); }
 
