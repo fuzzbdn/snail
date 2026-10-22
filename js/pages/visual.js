@@ -223,32 +223,34 @@ function drawFixedSiding(layer, startM, endM, fromLvl, toLvl) {
     createLine(layer, xEnd, yFrom, xEnd - SLOPE_PX, yTo, "track");
 }
 
-// === NY LOGIK: Separata spårval per station & linje ===
-function get overlappingSegments(minM, maxM) {
+// === Separata spårval per station & linje ===
+function getOverlappingSegments(minM, maxM) {
     let groups = [];
-    
-    // Kolla om sträckan täcker linjen mellan stationerna (t.ex. 1359000 - 1369000)
-    let coversLine = (minM < 1369000 && maxM > 1359000);
     let activeStations = stations.filter(st => (st.startM < maxM && st.endM > minM));
-
+    
     activeStations.forEach(st => {
         groups.push({
             id: st.id,
             name: st.name,
             startM: st.startM,
             endM: st.endM,
-            tracks: st.tracks
+            tracks: st.tracks,
+            isLine: false
         });
     });
 
-    // Om inga stationer träffas, eller om vi även täcker linjen emellan
-    if (activeStations.length === 0 || (coversLine && activeStations.length > 0)) {
+    // Kolla om sträckan går utanför/mellan stationerna (linjen är mellan 1359000 och 1369000)
+    const touchesLineBefore = minM < 1356000;
+    const touchesLineBetween = Math.max(minM, 1359000) < Math.min(maxM, 1369000);
+    const touchesLineAfter = maxM > 1372000;
+
+    if (activeStations.length === 0 || touchesLineBefore || touchesLineBetween || touchesLineAfter) {
         groups.push({
             id: 'line',
-            name: activeStations.length > 0 ? 'Linjen (emellan)' : 'Linjen',
-            startM: 1359000,
-            endM: 1369000,
-            tracks: [0], // 0 representerar huvudspåret på linjen
+            name: 'Linjen',
+            startM: START_METER,
+            endM: 1375000,
+            tracks: [0],
             isLine: true
         });
     }
@@ -263,11 +265,6 @@ function updateTrackOptions(minM, maxM) {
     const groups = getOverlappingSegments(minM, maxM);
     const signature = groups.map(g => `${g.id}:${g.tracks.join(',')}`).join('|');
     
-    // Spara tidigare ikryssade val om signaturen inte ändrats helt
-    const prevChecked = new Set();
-    container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-        if (chk.checked) prevChecked.add(`${chk.dataset.stationId}_${chk.value}`);
-    });
     const hadPrevious = container.dataset.signature === signature;
 
     if (!hadPrevious) {
@@ -322,40 +319,6 @@ function updateTrackOptions(minM, maxM) {
     }
 }
 
-function getOverlappingSegments(minM, maxM) {
-    let groups = [];
-    let activeStations = stations.filter(st => (st.startM < maxM && st.endM > minM));
-    
-    activeStations.forEach(st => {
-        groups.push({
-            id: st.id,
-            name: st.name,
-            startM: st.startM,
-            endM: st.endM,
-            tracks: st.tracks,
-            isLine: false
-        });
-    });
-
-    // Kolla om sträckan går utanför/mellan stationerna (linjen är mellan 1359000 och 1369000)
-    const touchesLineBefore = minM < 1356000;
-    const touchesLineBetween = Math.max(minM, 1359000) < Math.min(maxM, 1369000);
-    const touchesLineAfter = maxM > 1372000;
-
-    if (activeStations.length === 0 || touchesLineBefore || touchesLineBetween || touchesLineAfter) {
-        groups.push({
-            id: 'line',
-            name: 'Linjen',
-            startM: START_METER,
-            endM: 1375000,
-            tracks: [0],
-            isLine: true
-        });
-    }
-
-    return groups;
-}
-
 function notifyTrackSelection() {
     if (!onTracksChanged) return;
     const container = document.getElementById('track-selector');
@@ -392,7 +355,6 @@ function drawRangeHighlight(skipUpdateOptions = false) {
 
     if (!skipUpdateOptions) { updateTrackOptions(minM, maxM); }
 
-    // Läs in valda spår per station
     const selectedByStation = {};
     const container = document.getElementById('track-selector');
     let hasCheckboxes = false;
@@ -409,7 +371,6 @@ function drawRangeHighlight(skipUpdateOptions = false) {
         });
     }
 
-    // Om vi drar med musen (innan kryssrutorna skapats), visa huvudspår som default
     if (!hasCheckboxes) {
         stations.forEach(st => {
             if (st.startM < maxM && st.endM > minM) {
@@ -521,7 +482,6 @@ function drawRangeBox(minM, maxM, selectedByStation) {
     const x2 = meterToPx(maxM);
     let minLvl = -0.5, maxLvl = 0.5;
 
-    // Anpassa höjden på den gula boxen efter vilka stationer och spår som är valda
     if (selectedByStation['h'] && selectedByStation['h'].length > 0) {
         if (selectedByStation['h'].includes(1)) minLvl = Math.min(minLvl, -2);
         else if (selectedByStation['h'].includes(2)) minLvl = Math.min(minLvl, -1);
