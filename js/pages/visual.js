@@ -1,4 +1,4 @@
-// js/pages/visual.js
+// js/pages/visual.js 
 
 // --- KONFIGURATION ---
 const PX_PER_M = 0.6;   
