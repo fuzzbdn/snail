@@ -23,4 +23,6 @@ if (document.getElementById('users-page')) initUsersPage();
 if (document.getElementById('granska-page')) initGranskaPage();
 if (document.getElementById('aktiva-page')) initAktivaPage();
 if (document.getElementById('saved-page')) initSavedPage();
-if (document.getElementById('visual-page')) //initVisualPage(); // <--- NY RAD
+if (document.getElementById('visual-page')) {
+    // initVisualPage(); <-- RADERA/KOMMENTERA DENNA
+}
