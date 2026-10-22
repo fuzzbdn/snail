@@ -4,17 +4,14 @@
 const PX_PER_M = 0.6;   
 const START_METER = 1356000; 
 
-// Design & Geometri
 const Y_BASE = 300;     
 const TRACK_GAP = 60;   
 const SLOPE_PX = 20;    
 
-// Färger
-const COLOR_NEUTRAL = "#9ca3af"; // Grå
-const COLOR_START   = "#22c55e"; // Grön
-const COLOR_END     = "#ef4444"; // Röd
+const COLOR_NEUTRAL = "#9ca3af"; 
+const COLOR_START   = "#22c55e"; 
+const COLOR_END     = "#ef4444"; 
 
-// Variabler (Modul-skopade)
 let currentWorkRange = null; 
 let elDistLine = null;       
 let elDistText = null;       
@@ -34,7 +31,6 @@ const TRACK_DEFINITIONS = [
     { id: 'f1', start: 1370400, end: 1371063, levelFrom: 0, levelTo: 1, trackNum: 1, parentId: null }
 ];
 
-// --- OBJEKT ---
 let symbols = [
     { id: "102",  pos: 1356797, track: 0, dir: 1,  offset: 0, labelPos: -1, measureMode: 0 }, 
     { id: "L201", pos: 1356964, track: 0, dir: -1, offset: 0, labelPos: 1,  measureMode: 0 },  
@@ -78,80 +74,17 @@ let activeSym = null;
 let startMouseX = 0; 
 let initialOffset = 0;
 
-export function initVisualPage() {
-    const page = document.getElementById("visual-page");
-    if (!page) return;
+// --- EXPORTERADE FUNKTIONER FÖR PROJEKTERA.JS ---
 
-    // Bygg upp HTML-strukturen för din applikation och injicera CSS för SVG-elementen
-    page.innerHTML = `
-        <div class="navbar no-print">
-            <div class="nav-left">
-                <span class="logo">SNIGEL POC</span>
-                <a href="home.html">Hem</a>
-            </div>
-            <div class="nav-right" id="user-display"></div>
-        </div>
-        
-        <style>
-            .track { stroke: #4b5563; stroke-width: 4px; stroke-linecap: round; }
-            .station-name { font-size: 16px; font-weight: bold; fill: #111827; font-family: sans-serif; letter-spacing: 1px; }
-            .distance-line { stroke-width: 2px; stroke-dasharray: 4; }
-            .distance-text { font-size: 12px; font-weight: bold; font-family: sans-serif; }
-            .range-track-line { stroke: #fbbf24; stroke-width: 8px; opacity: 0.5; }
-            .km-marker { font-size: 9px; fill: #9ca3af; text-anchor: middle; font-family: sans-serif; }
-            .symbol-label { font-size: 11px; font-weight: bold; fill: #111827; text-anchor: middle; font-family: sans-serif; }
-            .track-highlight { stroke: #0078d4; stroke-width: 2px; opacity: 0.5; }
-            .offset-line { stroke: #0078d4; stroke-width: 1.5px; stroke-dasharray: 2; }
-            .offset-text { font-size: 11px; fill: #0078d4; text-anchor: middle; font-family: sans-serif; }
-            .symbol-group { cursor: pointer; }
-        </style>
+export let onSignalMarked = null; 
+export function setSignalCallback(callback) {
+    onSignalMarked = callback;
+}
 
-        <div style="padding: 40px 20px; font-family: sans-serif; max-width: 1300px; margin: 0 auto;">
-            <div style="background: #fff; padding: 30px; border-radius: 8px; border: 1px solid #eaeaea;">
-                
-                <!-- Kontrollpanelen (Input-fälten) -->
-                <div style="display: flex; gap: 20px; align-items: flex-end; margin-bottom: 25px;">
-                    <div>
-                        <label style="display:block; font-size:11px; color:#666; text-transform:uppercase; margin-bottom:5px;">FRÅN (KM)</label>
-                        <input type="text" id="inpStart" value="1357+100" style="padding:10px; border:1px solid #ccc; border-radius:4px; width:140px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:11px; color:#666; text-transform:uppercase; margin-bottom:5px;">TILL (KM)</label>
-                        <input type="text" id="inpEnd" value="1357+800" style="padding:10px; border:1px solid #ccc; border-radius:4px; width:140px;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:11px; color:#666; text-transform:uppercase; margin-bottom:5px;">SPÅRVAL</label>
-                        <div id="track-selector" style="padding:10px; border:1px solid #ccc; border-radius:4px; min-width: 250px; display:flex; gap:15px; color:#999;">Ange sträcka och klicka Visa...</div>
-                    </div>
-                    <button id="btnVisa" style="padding:10px 20px; background:#0078d4; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Visa Utbredning</button>
-                    <button id="btnRensa" style="padding:10px 20px; background:#fff; color:#333; border:1px solid #ccc; border-radius:4px; cursor:pointer;">Rensa</button>
-                </div>
-
-                <!-- Livedata -->
-                <div style="font-size:13px; color:#333; margin-bottom: 20px;">
-                    Signal: <strong id="uiId">-</strong> &nbsp;&nbsp;&nbsp;&nbsp; 
-                    Position: <strong id="uiKm">-</strong> &nbsp;&nbsp;&nbsp;&nbsp; 
-                    Justering: <strong id="uiOffset" style="color:#0078d4;">0 m</strong>
-                </div>
-
-                <!-- Kart-containern -->
-                <div class="map-container" style="border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; background: #fff;">
-                    <div id="mapWrapper" style="width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
-                        <svg id="svgMap"></svg>
-                    </div>
-                </div>
-                
-                <!-- Här injiceras 'Klicka på en signal...' texten -->
-            </div>
-        </div>
-    `;
-
-    // Koppla knappar
-    document.getElementById('btnVisa').addEventListener('click', () => drawRangeHighlight(false));
-    document.getElementById('btnRensa').addEventListener('click', clearRange);
-
-    // Konfigurera kartans storlek och rendera allt precis som i din fil
+export function initVisualMap() {
     svg = document.getElementById('svgMap');
+    if (!svg) return; 
+
     const lastPos = 1371600; 
     const totalW = (lastPos - START_METER) * PX_PER_M;
 
@@ -161,24 +94,20 @@ export function initVisualPage() {
     initMap();
 }
 
-// --------------------------------------------------------------------------
-// DIN EXAKTA KOD BÖRJAR HÄR (Endast justerad för att fungera i modulen)
+export function updateVisualRange(startKm, endKm) {
+    const startM = parseKmInput(startKm);
+    const endM = parseKmInput(endKm);
+    
+    if (isNaN(startM) || isNaN(endM)) return;
+
+    currentWorkRange = { start: Math.min(startM, endM), end: Math.max(startM, endM) };
+    drawRangeHighlight(true);
+}
+
 // --------------------------------------------------------------------------
 
 function initMap() {
-    const mapContainer = document.querySelector('.map-container');
-    if (mapContainer) {
-        const oldReadout = document.getElementById('measurement-readout');
-        if(oldReadout) oldReadout.remove();
-
-        elReadout = document.createElement('div');
-        elReadout.id = 'measurement-readout';
-        elReadout.style.marginTop = '15px';
-        elReadout.style.fontSize = '13px';
-        elReadout.style.color = '#666';
-        elReadout.textContent = "Klicka på en signal: 1 klick=Start (Grön), 2 klick=Slut (Röd).";
-        mapContainer.parentNode.insertBefore(elReadout, mapContainer.nextSibling);
-    }
+    elReadout = document.getElementById('measurement-readout');
 
     const layerTracks = createGroup("layer-tracks");
     layerRange = createGroup("layer-range"); 
@@ -194,7 +123,6 @@ function initMap() {
         drawFixedSiding(layerTracks, def.start, def.end, def.levelFrom, def.levelTo);
     });
 
-    // Spårnummer & Stationer
     drawTrackLabel(layerLabels, "3", 1357640, 0); 
     drawTrackLabel(layerLabels, "2", 1357640, -1);
     drawTrackLabel(layerLabels, "1", 1357640, -2);
@@ -211,7 +139,6 @@ function initMap() {
         layerTracks.appendChild(txt);
     });
 
-    // Skapa mät-elementen
     elDistLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
     elDistLine.setAttribute("class", "distance-line");
     elDistLine.style.display = "none";
@@ -222,7 +149,6 @@ function initMap() {
     elDistText.style.display = "none";
     layerOverlay.appendChild(elDistText);
 
-    // Symboler
     symbols.forEach((s, idx) => drawSymbol(s, idx, layerSymbols, layerHighlights));
 }
 
@@ -256,17 +182,13 @@ function updateTrackOptions(minM, maxM) {
     if (container.dataset.signature === signature) return;
 
     container.dataset.signature = signature;
-    container.style.color = '#333';
     container.innerHTML = ''; 
 
     sortedTracks.forEach(t => {
         const lbl = document.createElement('label');
-        lbl.className = 'checkbox-item';
-        lbl.style.cursor = 'pointer';
         const chk = document.createElement('input');
         chk.type = 'checkbox';
         chk.value = t;
-        chk.id = `chk-track-${t}`;
         chk.checked = true; 
         chk.onchange = () => drawRangeHighlight(true);
         lbl.appendChild(chk);
@@ -278,18 +200,10 @@ function updateTrackOptions(minM, maxM) {
 function drawRangeHighlight(skipUpdateOptions = false) {
     if (!layerRange) layerRange = document.getElementById("layer-range");
     if (layerRange) layerRange.innerHTML = ''; 
+    if (!currentWorkRange) return;
 
-    const val1 = document.getElementById('inpStart').value;
-    const val2 = document.getElementById('inpEnd').value;
-    const startM = parseKmInput(val1);
-    const endM = parseKmInput(val2);
-
-    if (isNaN(startM) || isNaN(endM)) { return; }
-    
-    const minM = Math.min(startM, endM);
-    const maxM = Math.max(startM, endM);
-
-    currentWorkRange = { start: minM, end: maxM };
+    const minM = currentWorkRange.start;
+    const maxM = currentWorkRange.end;
 
     if (!skipUpdateOptions) { updateTrackOptions(minM, maxM); }
 
@@ -299,6 +213,8 @@ function drawRangeHighlight(skipUpdateOptions = false) {
         container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
             if (chk.checked) selectedTracks.push(parseInt(chk.value));
         });
+    } else {
+        selectedTracks.push(0); // Fallback
     }
 
     selectedTracks.forEach(trackNum => {
@@ -329,7 +245,6 @@ function drawHierarchicalTrack(reqStart, reqEnd, trackNum) {
         let segEnd = sortedPoints[i+1];
         let mid = (segStart + segEnd) / 2;
 
-        let level = getLevelAt(mid, trackNum);
         let lvlStart = getLevelAt(segStart + 0.1, trackNum); 
         let lvlEnd = getLevelAt(segEnd - 0.1, trackNum);
 
@@ -457,7 +372,7 @@ function updateDistanceVisuals(sym) {
 function updateReadout() {
     if (!elReadout) return;
     if (!currentWorkRange) {
-        elReadout.textContent = "Ange nedsättning och klicka på signaler.";
+        elReadout.textContent = "Hämta planering för att visa utbredning.";
         return;
     }
 
@@ -505,17 +420,7 @@ function updateSymbolColor(sym, index) {
 function createGroup(id) { const g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.id = id; svg.appendChild(g); return g; }
 function parseKmInput(val) { if (!val) return null; val = val.toString().replace(/\s/g, '').replace(',', '.'); if (val.includes('+')) { const parts = val.split('+'); if (parts.length === 2) return parseInt(parts[0], 10) * 1000 + parseInt(parts[1], 10); } if (val.includes('.') && val.indexOf('.') < 5) return parseFloat(val) * 1000; return parseInt(val, 10); }
 function createRangeBorder(x, y1, y2) { const l = document.createElementNS("http://www.w3.org/2000/svg", "line"); l.setAttribute("x1", x); l.setAttribute("y1", y1); l.setAttribute("x2", x); l.setAttribute("y2", y2); l.setAttribute("class", "range-border"); l.setAttribute("stroke", "#dc3545"); l.setAttribute("stroke-width", "2"); l.setAttribute("stroke-dasharray", "5,5"); layerRange.appendChild(l); }
-function clearRange() { 
-    if(layerRange) layerRange.innerHTML = ''; 
-    currentWorkRange = null; 
-    symbols.forEach((s, i) => { s.measureMode = 0; updateSymbolColor(s, i); });
-    updateDistanceVisuals(null); 
-    updateReadout();
-    document.getElementById('inpStart').value = '';
-    document.getElementById('inpEnd').value = '';
-    const ts = document.getElementById('track-selector');
-    if(ts) { ts.innerHTML = 'Ange sträcka och klicka Visa...'; ts.dataset.signature = ''; ts.style.color = '#999'; }
-}
+
 function createLine(parent, x1, y1, x2, y2, cls) { const l = document.createElementNS("http://www.w3.org/2000/svg", "line"); l.setAttribute("x1", x1); l.setAttribute("y1", y1); l.setAttribute("x2", x2); l.setAttribute("y2", y2); l.setAttribute("class", cls); parent.appendChild(l); }
 function drawTrackLabel(layer, num, meterPos, trackLvl) { const x = meterToPx(meterPos); const y = Y_BASE + (trackLvl * TRACK_GAP); const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.textContent = num; txt.setAttribute("x", x); txt.setAttribute("y", y - 10); txt.setAttribute("fill", "#666"); txt.setAttribute("font-size", "14px"); txt.setAttribute("font-weight", "bold"); layer.appendChild(txt); }
 
@@ -624,6 +529,12 @@ function endDrag() {
         updateSymbolColor(activeSym, symbols.indexOf(activeSym));
         updateDistanceVisuals(activeSym);
         updateReadout(); 
+
+        // TRigga callback till projektera.js!
+        let type = newMode === 1 ? 'Start' : (newMode === 2 ? 'Slut' : 'Rensad');
+        if (onSignalMarked) {
+            onSignalMarked(activeSym, type);
+        }
     }
     
     document.removeEventListener('mousemove', onDrag); 
