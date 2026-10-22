@@ -1,14 +1,68 @@
 import { StorageManager } from '../core/storage.js';
 import { showToast } from '../core/ui.js';
 
+// Importera vår kart-modul
+import { initVisualMap, updateVisualRange, setRangeCallback, setTrackChangeCallback, formatKm } from './visual.js';
+
 // ==========================================
 // SIDA: PLANERA
 // ==========================================
 export function initPlaneraPage() {
 
+    // --- Initiera kartan och sätt upp kopplingarna ---
+    initVisualMap();
+
+    const elStartKm = document.getElementById('plan_start_km');
+    const elStartM = document.getElementById('plan_start_m');
+    const elSlutKm = document.getElementById('plan_slut_km');
+    const elSlutM = document.getElementById('plan_slut_m');
+    const elSpar = document.getElementById('plan_spar');
+
+    // 1. Karta -> Formulär (När man ritar en zon med musen)
+    setRangeCallback((startM, endM) => {
+        const strStart = formatKm(startM);
+        const strSlut = formatKm(endM);
+
+        if (strStart.includes('+')) {
+            const p = strStart.split('+');
+            if(elStartKm) elStartKm.value = p[0];
+            if(elStartM) elStartM.value = p[1];
+        }
+        
+        if (strSlut.includes('+')) {
+            const p = strSlut.split('+');
+            if(elSlutKm) elSlutKm.value = p[0];
+            if(elSlutM) elSlutM.value = p[1];
+        }
+    });
+
+    // 2. Spårval i kartan -> Fyll i textfältet "Spår" automatiskt
+    setTrackChangeCallback((trackText) => {
+        if (elSpar) {
+            elSpar.value = trackText;
+        }
+    });
+
+    // 3. Formulär -> Karta (När man skriver manuellt)
+    const onManualKmInput = () => {
+        const sKm = elStartKm?.value || '';
+        const sM = elStartM?.value || '000';
+        const eKm = elSlutKm?.value || '';
+        const eM = elSlutM?.value || '000';
+
+        if (sKm.length >= 3 && eKm.length >= 3) {
+            updateVisualRange(`${sKm}+${sM}`, `${eKm}+${eM}`);
+        }
+    };
+    
+    if(elStartKm) elStartKm.addEventListener('input', onManualKmInput);
+    if(elStartM) elStartM.addEventListener('input', onManualKmInput);
+    if(elSlutKm) elSlutKm.addEventListener('input', onManualKmInput);
+    if(elSlutM) elSlutM.addEventListener('input', onManualKmInput);
+    // ---------------------------------------------------
+
     const fromInput = document.getElementById("from");
     if (fromInput) {
-        // Skapa nuvarande tidpunkt och formatera den till YYYY-MM-DDThh:mm
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -51,7 +105,6 @@ export function initPlaneraPage() {
             entry.timestamp = new Date().toISOString();
             entry.status = "planerad"; 
 
-            // --- HÄMTA INLOGGAD ANVÄNDARE & E-POST ---
             const currentUserJson = sessionStorage.getItem('currentUser');
             let userEmail = "okänd e-post";
             let userName = entry.planerare;
@@ -62,10 +115,8 @@ export function initPlaneraPage() {
                 userName = u.name;
             }
             
-            // Spara datan
             StorageManager.add(entry);
             
-            // SIMULERA EMAIL-BEKRÄFTELSE
             const mailSubject = `Beställning Mottagen: ${entry.identitet || 'Nedsättning'}`;
             const mailBody = `Hej ${userName}!\n\nDin beställning av nedsättning på sträcka ${entry.start_km} - ${entry.slut_km} är mottagen.\nOrsak: ${entry.orsak}`;
 
@@ -75,15 +126,15 @@ export function initPlaneraPage() {
             console.log(`Meddelande: \n${mailBody}`);
             console.groupEnd();
             
-            // Visa snygg toast istället för alert
             const msg = `Beställning skickad!\nEn bekräftelse har skickats till ${userName}.`;
             showToast(msg, 'success');
             
-            // Återställ formuläret
             form.reset();
             document.getElementById('planerare').value = userName;
             document.getElementById("to").value = "Tillsvidare"; 
             if (fromInput) fromInput.valueAsDate = new Date();
+            
+            updateVisualRange("0+000", "0+000"); 
         });
     }
 
