@@ -85,7 +85,7 @@ export function setRangeCallback(callback) {
 
 export function formatKm(meter) {
     const k = Math.floor(meter / 1000);
-    const m = Math.round(meter % 1000);
+    const m = Math.round(meter % 1000); // Rundar internt av metervärdet
     return `${k}+${m.toString().padStart(3, '0')}`;
 }
 
@@ -103,8 +103,8 @@ export function initVisualMap() {
 }
 
 export function updateVisualRange(startKm, endKm) {
-    const startM = parseKmInput(startKm);
-    const endM = parseKmInput(endKm);
+    const startM = Math.round(parseKmInput(startKm));
+    const endM = Math.round(parseKmInput(endKm));
     if (isNaN(startM) || isNaN(endM)) return;
 
     currentWorkRange = { start: Math.min(startM, endM), end: Math.max(startM, endM) };
@@ -157,7 +157,7 @@ function initMap() {
     symbols.forEach((s, idx) => drawSymbol(s, idx, layerSymbols, layerHighlights));
 
     // ==============================================================
-    // NYTT: Logik för att dra upp ett område på kartan med musen
+    // Logik för att dra upp ett område på kartan med musen
     // ==============================================================
     svg.style.cursor = "crosshair"; 
     svg.style.userSelect = "none";
@@ -166,16 +166,16 @@ function initMap() {
     let selectStartMeter = 0;
 
     svg.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.symbol-group')) return; // Ignorera om man klickar på en signal
+        if (e.target.closest('.symbol-group')) return;
         e.preventDefault();
         isSelectingRange = true;
         
-        // Räkna ut exakt koordinat (hanterar scroll automatiskt)
         const pt = svg.createSVGPoint();
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
         
-        selectStartMeter = pxToMeter(svgP.x);
+        // Avrunda till hela meter direkt vid klick
+        selectStartMeter = Math.round(pxToMeter(svgP.x)); 
         currentWorkRange = { start: selectStartMeter, end: selectStartMeter };
         drawRangeHighlight(true);
     });
@@ -185,7 +185,9 @@ function initMap() {
         const pt = svg.createSVGPoint();
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-        const currentMeter = pxToMeter(svgP.x);
+        
+        // Avrunda till hela meter under dragningen
+        const currentMeter = Math.round(pxToMeter(svgP.x));
 
         currentWorkRange = {
             start: Math.min(selectStartMeter, currentMeter),
@@ -197,7 +199,6 @@ function initMap() {
     const endSelection = () => {
         if (isSelectingRange) {
             isSelectingRange = false;
-            // Skicka datan till planera.js eller projektera.js via callback
             if (onRangeSelected) onRangeSelected(currentWorkRange.start, currentWorkRange.end);
         }
     };
@@ -257,8 +258,8 @@ function drawRangeHighlight(skipUpdateOptions = false) {
     if (layerRange) layerRange.innerHTML = ''; 
     if (!currentWorkRange) return;
 
-    const minM = currentWorkRange.start;
-    const maxM = currentWorkRange.end;
+    const minM = Math.round(currentWorkRange.start);
+    const maxM = Math.round(currentWorkRange.end);
 
     if (!skipUpdateOptions) { updateTrackOptions(minM, maxM); }
 
@@ -371,7 +372,8 @@ function drawRangeBox(minM, maxM, selectedTracks) {
     createRangeBorder(x2, boxTop, boxBottom);
 
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.textContent = `Längd: ${maxM - minM} m`;
+    const len = Math.round(maxM - minM); // Tvingar längd-etiketten till heltal
+    label.textContent = `Längd: ${len} m`;
     label.setAttribute("x", x1 + 10); label.setAttribute("y", boxTop - 10);
     label.setAttribute("class", "offset-text"); label.style.textAnchor = "start";
     label.style.fill = "#dc3545"; label.style.fontSize = "16px"; label.style.fontWeight = "bold";
@@ -390,15 +392,15 @@ function updateDistanceVisuals(sym) {
         return;
     }
 
-    const currentSymPos = sym.pos + sym.offset;
+    const currentSymPos = Math.round(sym.pos + sym.offset);
     let targetM = 0;
     let diffVal = 0;
 
     if (sym.measureMode === 1) {
-        targetM = currentWorkRange.start;
+        targetM = Math.round(currentWorkRange.start);
         diffVal = currentSymPos - targetM;
     } else if (sym.measureMode === 2) {
-        targetM = currentWorkRange.end;
+        targetM = Math.round(currentWorkRange.end);
         diffVal = targetM - currentSymPos;
     }
 
@@ -590,5 +592,7 @@ function endDrag() {
 
 function updateVisuals(sym) { const idx = symbols.indexOf(sym); const hl = document.getElementById(`hl-${idx}`); const ol = document.getElementById(`ol-${idx}`); const olTxt = document.getElementById(`ol-txt-${idx}`); if (sym.offset === 0) { hl.style.display = 'none'; ol.style.display = 'none'; olTxt.style.display = 'none'; return; } hl.style.display = 'block'; ol.style.display = 'block'; olTxt.style.display = 'block'; const baseX = meterToPx(sym.pos); const targetX = baseX + (sym.offset * PX_PER_M); const y = Y_BASE + (sym.track * TRACK_GAP); hl.setAttribute("x1", baseX); hl.setAttribute("x2", targetX); hl.setAttribute("y1", y); hl.setAttribute("y2", y); const relTargetX = sym.offset * PX_PER_M; const lineY = (sym.labelPos === -1) ? -45 : 50; ol.setAttribute("x1", 0); ol.setAttribute("y1", lineY); ol.setAttribute("x2", relTargetX); ol.setAttribute("y2", lineY); olTxt.textContent = (sym.offset > 0 ? "+" : "") + sym.offset + "m"; olTxt.setAttribute("x", relTargetX / 2); olTxt.setAttribute("y", lineY - 4); }
 function updateUI() { if(!activeSym) return; document.getElementById('uiId').textContent = activeSym.id; const kmPart = Math.floor(activeSym.pos / 1000); const mPart = activeSym.pos % 1000; document.getElementById('uiKm').textContent = `${kmPart}+${mPart.toString().padStart(3,'0')}`; const elOff = document.getElementById('uiOffset'); elOff.textContent = (activeSym.offset > 0 ? "+" : "") + activeSym.offset + " m"; elOff.style.color = activeSym.offset === 0 ? '#111827' : '#dc3545'; }
+
+// Tvingar uträkningarna att leverera exakta heltal när man klickar i pixlar på skärmen
 function meterToPx(m) { return (m - START_METER) * PX_PER_M; }
-function pxToMeter(px) { return (px / PX_PER_M) + START_METER; }
+function pxToMeter(px) { return Math.round((px / PX_PER_M) + START_METER); }
