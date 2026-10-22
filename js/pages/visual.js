@@ -18,15 +18,17 @@ let isDragging = false;
 let svg = null;
 let layerRange = null;
 
+// Stationer med unikt id ('h' respektive 'f')
 const stations = [
-    { name: "Harrå",     km: 1357640, yOffset: -180, startM: 1356000, endM: 1359000, tracks: [1, 2, 3], mainTrack: 3 },
-    { name: "Fjällåsen", km: 1370750, yOffset: -100, startM: 1369000, endM: 1372000, tracks: [1, 2],    mainTrack: 2 }
+    { id: "h", name: "Harrå",     km: 1357640, yOffset: -180, startM: 1356000, endM: 1359000, tracks: [1, 2, 3], mainTrack: 3 },
+    { id: "f", name: "Fjällåsen", km: 1370750, yOffset: -100, startM: 1369000, endM: 1372000, tracks: [1, 2],    mainTrack: 2 }
 ];
 
+// Sidospår kopplade till respektive stationId
 const TRACK_DEFINITIONS = [
-    { id: 'h2', start: 1357123, end: 1358052, levelFrom: 0, levelTo: -1, trackNum: 2, parentId: null }, 
-    { id: 'h1', start: 1357546, end: 1357717, levelFrom: -1, levelTo: -2, trackNum: 1, parentId: 'h2' },
-    { id: 'f1', start: 1370400, end: 1371063, levelFrom: 0, levelTo: 1, trackNum: 1, parentId: null }
+    { id: 'h2', stationId: 'h', start: 1357123, end: 1358052, levelFrom: 0, levelTo: -1, trackNum: 2, parentId: null }, 
+    { id: 'h1', stationId: 'h', start: 1357546, end: 1357717, levelFrom: -1, levelTo: -2, trackNum: 1, parentId: 'h2' },
+    { id: 'f1', stationId: 'f', start: 1370400, end: 1371063, levelFrom: 0, levelTo: 1, trackNum: 1, parentId: null }
 ];
 
 let symbols = [
@@ -83,6 +85,11 @@ export function setRangeCallback(callback) {
     onRangeSelected = callback; 
 }
 
+export let onTracksChanged = null;
+export function setTrackChangeCallback(callback) {
+    onTracksChanged = callback;
+}
+
 export function formatKm(meter) {
     const k = Math.floor(meter / 1000);
     const m = Math.round(meter % 1000); 
@@ -108,8 +115,6 @@ export function updateVisualRange(startKm, endKm) {
     if (isNaN(startM) || isNaN(endM)) return;
 
     currentWorkRange = { start: Math.min(startM, endM), end: Math.max(startM, endM) };
-    
-    // ÄNDRAT TILL FALSE: Tvingar fram rendering av spårvalen
     drawRangeHighlight(false);
 }
 
@@ -178,7 +183,7 @@ function initMap() {
         
         selectStartMeter = Math.round(pxToMeter(svgP.x)); 
         currentWorkRange = { start: selectStartMeter, end: selectStartMeter };
-        drawRangeHighlight(true); // TRUE under dragning för prestanda
+        drawRangeHighlight(true); 
     });
 
     svg.addEventListener('mousemove', (e) => {
@@ -193,23 +198,19 @@ function initMap() {
             start: Math.min(selectStartMeter, currentMeter),
             end: Math.max(selectStartMeter, currentMeter)
         };
-        drawRangeHighlight(true); // TRUE under dragning för prestanda
+        drawRangeHighlight(true); 
     });
 
     const endSelection = () => {
         if (isSelectingRange) {
             isSelectingRange = false;
-            
-            // ÄNDRAT TILL FALSE: Tvingar fram spårvalen när man SLÄPPER musknappen
             drawRangeHighlight(false); 
-
             if (onRangeSelected) onRangeSelected(currentWorkRange.start, currentWorkRange.end);
         }
     };
     
     svg.addEventListener('mouseup', endSelection);
     svg.addEventListener('mouseleave', endSelection);
-    // ==============================================================
 }
 
 function drawFixedSiding(layer, startM, endM, fromLvl, toLvl) {
@@ -222,46 +223,163 @@ function drawFixedSiding(layer, startM, endM, fromLvl, toLvl) {
     createLine(layer, xEnd, yFrom, xEnd - SLOPE_PX, yTo, "track");
 }
 
+// === NY LOGIK: Separata spårval per station & linje ===
+function get overlappingSegments(minM, maxM) {
+    let groups = [];
+    
+    // Kolla om sträckan täcker linjen mellan stationerna (t.ex. 1359000 - 1369000)
+    let coversLine = (minM < 1369000 && maxM > 1359000);
+    let activeStations = stations.filter(st => (st.startM < maxM && st.endM > minM));
+
+    activeStations.forEach(st => {
+        groups.push({
+            id: st.id,
+            name: st.name,
+            startM: st.startM,
+            endM: st.endM,
+            tracks: st.tracks
+        });
+    });
+
+    // Om inga stationer träffas, eller om vi även täcker linjen emellan
+    if (activeStations.length === 0 || (coversLine && activeStations.length > 0)) {
+        groups.push({
+            id: 'line',
+            name: activeStations.length > 0 ? 'Linjen (emellan)' : 'Linjen',
+            startM: 1359000,
+            endM: 1369000,
+            tracks: [0], // 0 representerar huvudspåret på linjen
+            isLine: true
+        });
+    }
+
+    return groups;
+}
+
 function updateTrackOptions(minM, maxM) {
     const container = document.getElementById('track-selector');
     if (!container) return;
 
-    let activeStations = stations.filter(st => (st.startM < maxM && st.endM > minM));
-    let availableTracks = new Set();
+    const groups = getOverlappingSegments(minM, maxM);
+    const signature = groups.map(g => `${g.id}:${g.tracks.join(',')}`).join('|');
     
-    if (activeStations.length === 0) {
-        availableTracks.add(2); availableTracks.add(3);
-    } else {
-        activeStations.forEach(st => {
-            if(st.tracks) st.tracks.forEach(t => availableTracks.add(t));
+    // Spara tidigare ikryssade val om signaturen inte ändrats helt
+    const prevChecked = new Set();
+    container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        if (chk.checked) prevChecked.add(`${chk.dataset.stationId}_${chk.value}`);
+    });
+    const hadPrevious = container.dataset.signature === signature;
+
+    if (!hadPrevious) {
+        container.dataset.signature = signature;
+        container.innerHTML = ''; 
+        container.style.color = '#333';
+        container.style.flexWrap = 'wrap';
+
+        groups.forEach(group => {
+            const groupDiv = document.createElement('div');
+            groupDiv.style.display = 'flex';
+            groupDiv.style.alignItems = 'center';
+            groupDiv.style.gap = '10px';
+            groupDiv.style.padding = '6px 12px';
+            groupDiv.style.background = '#fff';
+            groupDiv.style.border = '1px solid #ddd';
+            groupDiv.style.borderRadius = '6px';
+
+            const title = document.createElement('strong');
+            title.textContent = `${group.name}:`;
+            title.style.fontSize = '13px';
+            title.style.color = '#111827';
+            groupDiv.appendChild(title);
+
+            group.tracks.forEach(t => {
+                const lbl = document.createElement('label');
+                lbl.style.cursor = 'pointer';
+                lbl.style.display = 'flex';
+                lbl.style.alignItems = 'center';
+                lbl.style.gap = '4px';
+                
+                const chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.value = t;
+                chk.dataset.stationId = group.id;
+                chk.dataset.stationName = group.name;
+                chk.checked = true; 
+                chk.onchange = () => {
+                    drawRangeHighlight(true);
+                    notifyTrackSelection();
+                };
+                
+                lbl.appendChild(chk);
+                lbl.appendChild(document.createTextNode(group.isLine ? `Huvudspår` : `Spår ${t}`));
+                groupDiv.appendChild(lbl);
+            });
+
+            container.appendChild(groupDiv);
+        });
+        
+        notifyTrackSelection();
+    }
+}
+
+function getOverlappingSegments(minM, maxM) {
+    let groups = [];
+    let activeStations = stations.filter(st => (st.startM < maxM && st.endM > minM));
+    
+    activeStations.forEach(st => {
+        groups.push({
+            id: st.id,
+            name: st.name,
+            startM: st.startM,
+            endM: st.endM,
+            tracks: st.tracks,
+            isLine: false
+        });
+    });
+
+    // Kolla om sträckan går utanför/mellan stationerna (linjen är mellan 1359000 och 1369000)
+    const touchesLineBefore = minM < 1356000;
+    const touchesLineBetween = Math.max(minM, 1359000) < Math.min(maxM, 1369000);
+    const touchesLineAfter = maxM > 1372000;
+
+    if (activeStations.length === 0 || touchesLineBefore || touchesLineBetween || touchesLineAfter) {
+        groups.push({
+            id: 'line',
+            name: 'Linjen',
+            startM: START_METER,
+            endM: 1375000,
+            tracks: [0],
+            isLine: true
         });
     }
 
-    const sortedTracks = Array.from(availableTracks).sort((a,b) => a - b);
-    const signature = sortedTracks.join(',');
-    if (container.dataset.signature === signature) return;
+    return groups;
+}
 
-    container.dataset.signature = signature;
-    container.innerHTML = ''; 
-    
-    // NYTT: Återställ textfärgen från grått till mörkt så det syns bra
-    container.style.color = '#333'; 
+function notifyTrackSelection() {
+    if (!onTracksChanged) return;
+    const container = document.getElementById('track-selector');
+    if (!container) return;
 
-    sortedTracks.forEach(t => {
-        const lbl = document.createElement('label');
-        lbl.style.cursor = 'pointer';
-        lbl.style.display = 'flex';
-        lbl.style.alignItems = 'center';
-        lbl.style.gap = '5px';
-        const chk = document.createElement('input');
-        chk.type = 'checkbox';
-        chk.value = t;
-        chk.checked = true; 
-        chk.onchange = () => drawRangeHighlight(true); // TRUE här så kryssrutorna inte försvinner när man klickar på dem
-        lbl.appendChild(chk);
-        lbl.appendChild(document.createTextNode(`Spår ${t}`));
-        container.appendChild(lbl);
+    const byStation = {};
+    container.querySelectorAll('input[type="checkbox"]:checked').forEach(chk => {
+        const sName = chk.dataset.stationName;
+        const sId = chk.dataset.stationId;
+        if (sId === 'line') {
+            if (!byStation[sName]) byStation[sName] = [];
+            byStation[sName].push('Huvudspår');
+        } else {
+            if (!byStation[sName]) byStation[sName] = [];
+            byStation[sName].push(chk.value);
+        }
     });
+
+    const parts = Object.entries(byStation).map(([name, trks]) => {
+        if (name === 'Linjen') return Object.keys(byStation).length === 1 ? 'Linjen' : '';
+        return `${name}: Spår ${trks.join(', ')}`;
+    }).filter(Boolean);
+
+    onTracksChanged(parts.join(' | '));
 }
 
 function drawRangeHighlight(skipUpdateOptions = false) {
@@ -274,33 +392,75 @@ function drawRangeHighlight(skipUpdateOptions = false) {
 
     if (!skipUpdateOptions) { updateTrackOptions(minM, maxM); }
 
-    const selectedTracks = [];
+    // Läs in valda spår per station
+    const selectedByStation = {};
     const container = document.getElementById('track-selector');
+    let hasCheckboxes = false;
+
     if (container) {
-        container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-            if (chk.checked) selectedTracks.push(parseInt(chk.value));
+        const chks = container.querySelectorAll('input[type="checkbox"]');
+        hasCheckboxes = chks.length > 0;
+        chks.forEach(chk => {
+            if (chk.checked) {
+                const stId = chk.dataset.stationId;
+                if (!selectedByStation[stId]) selectedByStation[stId] = [];
+                selectedByStation[stId].push(parseInt(chk.value));
+            }
         });
     }
-    
-    if (selectedTracks.length === 0) selectedTracks.push(0);
 
-    selectedTracks.forEach(trackNum => {
-        drawHierarchicalTrack(minM, maxM, trackNum);
+    // Om vi drar med musen (innan kryssrutorna skapats), visa huvudspår som default
+    if (!hasCheckboxes) {
+        stations.forEach(st => {
+            if (st.startM < maxM && st.endM > minM) {
+                selectedByStation[st.id] = [st.mainTrack];
+            }
+        });
+        selectedByStation['line'] = [0];
+    }
+
+    // 1. Rita spår för varje aktiv station inom stationens gränser
+    stations.forEach(st => {
+        const segStart = Math.max(minM, st.startM);
+        const segEnd = Math.min(maxM, st.endM);
+        if (segStart < segEnd && selectedByStation[st.id]) {
+            selectedByStation[st.id].forEach(trackNum => {
+                drawHierarchicalTrack(segStart, segEnd, trackNum, st.id);
+            });
+        }
     });
 
-    drawRangeBox(minM, maxM, selectedTracks);
+    // 2. Rita linjespår (utanför stationerna) om Linjen är vald
+    if (selectedByStation['line']) {
+        const lineIntervals = [
+            [START_METER, 1356000],
+            [1359000, 1369000],
+            [1372000, 1375000]
+        ];
+        lineIntervals.forEach(([lStart, lEnd]) => {
+            const segStart = Math.max(minM, lStart);
+            const segEnd = Math.min(maxM, lEnd);
+            if (segStart < segEnd) {
+                drawHierarchicalTrack(segStart, segEnd, 0, 'line');
+            }
+        });
+    }
+
+    drawRangeBox(minM, maxM, selectedByStation);
     
     updateReadout();
     if (activeSym) updateDistanceVisuals(activeSym);
 }
 
-function drawHierarchicalTrack(reqStart, reqEnd, trackNum) {
+function drawHierarchicalTrack(reqStart, reqEnd, trackNum, stationId) {
     let points = new Set([reqStart, reqEnd]);
     TRACK_DEFINITIONS.forEach(d => {
-        points.add(d.start);
-        points.add(d.end);
-        points.add(pxToMeter(meterToPx(d.start) + SLOPE_PX));
-        points.add(pxToMeter(meterToPx(d.end) - SLOPE_PX));
+        if (d.stationId === stationId) {
+            points.add(d.start);
+            points.add(d.end);
+            points.add(pxToMeter(meterToPx(d.start) + SLOPE_PX));
+            points.add(pxToMeter(meterToPx(d.end) - SLOPE_PX));
+        }
     });
 
     let sortedPoints = Array.from(points)
@@ -310,10 +470,9 @@ function drawHierarchicalTrack(reqStart, reqEnd, trackNum) {
     for (let i = 0; i < sortedPoints.length - 1; i++) {
         let segStart = sortedPoints[i];
         let segEnd = sortedPoints[i+1];
-        let mid = (segStart + segEnd) / 2;
 
-        let lvlStart = getLevelAt(segStart + 0.1, trackNum); 
-        let lvlEnd = getLevelAt(segEnd - 0.1, trackNum);
+        let lvlStart = getLevelAt(segStart + 0.1, trackNum, stationId); 
+        let lvlEnd = getLevelAt(segEnd - 0.1, trackNum, stationId);
 
         const x1 = meterToPx(segStart);
         const x2 = meterToPx(segEnd);
@@ -328,8 +487,10 @@ function drawHierarchicalTrack(reqStart, reqEnd, trackNum) {
     }
 }
 
-function getLevelAt(meter, trackNum) {
-    let def = TRACK_DEFINITIONS.find(d => d.trackNum === trackNum && meter >= d.start && meter <= d.end);
+function getLevelAt(meter, trackNum, stationId) {
+    if (stationId === 'line' || trackNum === 0) return 0;
+
+    let def = TRACK_DEFINITIONS.find(d => d.stationId === stationId && d.trackNum === trackNum && meter >= d.start && meter <= d.end);
     if (def) {
         let x = meterToPx(meter);
         let xStart = meterToPx(def.start);
@@ -346,27 +507,27 @@ function getLevelAt(meter, trackNum) {
             return def.levelTo;
         }
     }
-    let relevantDef = null;
-    if (meter < 1360000) relevantDef = TRACK_DEFINITIONS.find(d => d.trackNum === trackNum && d.id.startsWith('h'));
-    else if (meter > 1368000) relevantDef = TRACK_DEFINITIONS.find(d => d.trackNum === trackNum && d.id.startsWith('f'));
 
+    let relevantDef = TRACK_DEFINITIONS.find(d => d.stationId === stationId && d.trackNum === trackNum);
     if (relevantDef && relevantDef.parentId) {
         let parentDef = TRACK_DEFINITIONS.find(d => d.id === relevantDef.parentId);
-        if (parentDef) return getLevelAt(meter, parentDef.trackNum);
+        if (parentDef) return getLevelAt(meter, parentDef.trackNum, stationId);
     }
     return 0;
 }
 
-function drawRangeBox(minM, maxM, selectedTracks) {
+function drawRangeBox(minM, maxM, selectedByStation) {
     const x1 = meterToPx(minM);
     const x2 = meterToPx(maxM);
-    let minLvl = 0, maxLvl = 0;
+    let minLvl = -0.5, maxLvl = 0.5;
 
-    if (selectedTracks.length > 1) {
-        if (minM < 1360000) { minLvl = -2; maxLvl = 0; } 
-        else if (maxM > 1368000) { minLvl = 0; maxLvl = 1; } 
-    } else if (selectedTracks.length === 1) {
-        minLvl = -0.5; maxLvl = 0.5;
+    // Anpassa höjden på den gula boxen efter vilka stationer och spår som är valda
+    if (selectedByStation['h'] && selectedByStation['h'].length > 0) {
+        if (selectedByStation['h'].includes(1)) minLvl = Math.min(minLvl, -2);
+        else if (selectedByStation['h'].includes(2)) minLvl = Math.min(minLvl, -1);
+    }
+    if (selectedByStation['f'] && selectedByStation['f'].length > 0) {
+        if (selectedByStation['f'].includes(1)) maxLvl = Math.max(maxLvl, 1);
     }
 
     const boxTop = Y_BASE + (minLvl * TRACK_GAP) - 60;
