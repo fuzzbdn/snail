@@ -5,68 +5,94 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Planering av hastighetsnedsättning</title>
     <link rel="stylesheet" href="style.css">
-    <script id="xmlData" type="text/xml">
-		<data>
-			<taglangd>
-				<option value="Hel (95)">Hel (95)</option>
-				<option value="Front (95)">Front (95)</option>
-				<option value="Ja (M11)">Ja (M11)</option>
-				<option value="Nej (M11)">Nej (M11)</option>
-			</taglangd>
-			<axellast>
-				<option value="All (HNS gäller för alla fordon) (95)">All (HNS gäller för alla fordon) (95)</option>
-				<option value="A - STAX 16 ton - STVM 5 ton/m (95)">A - STAX 16 ton - STVM 5 ton/m (95)</option>
-				<option value="HS17 STAX 17 ton (95)">HS17 STAX 17 ton (95)</option>
-				<option value="B1 - STAX 18 ton - STVM 5 ton/m (95)">B1 - STAX 18 ton - STVM 5 ton/m (95)</option>
-				<option value="B2 - STAX 18 ton - STVM 6,4 ton/m (95)">B2 - STAX 18 ton - STVM 6,4 ton/m (95)</option>
-				<option value="C2 - STAX 20 ton - STVM 6,4 ton/m (95)">C2 - STAX 20 ton - STVM 6,4 ton/m (95)</option>
-				<option value="C3 - STAX 20 ton - STVM 7,2 ton/m (95)">C3 - STAX 20 ton - STVM 7,2 ton/m (95)</option>
-				<option value="D2 - STAX 22,5 ton - STVM 6,4 ton/m (95)">D2 - STAX 22,5 ton - STVM 6,4 ton/m (95)</option>
-				<option value="D3 - STAX 22,5 ton - STVM 7,2 ton/m (95)">D3 - STAX 22,5 ton - STVM 7,2 ton/m (95)</option>
-				<option value="D4 - STAX 22,5 ton - STVM 8 ton/m (95)">D4 - STAX 22,5 ton - STVM 8 ton/m (95)</option>
-				<option value="D4XL - STAX 22,5 ton - STVM 7,4 ton/m (95)">D4XL - STAX 22,5 ton - STVM 7,4 ton/m (95)</option>
-				<option value="E4 - STAX 25 ton - STVM 8,8 ton/m (95)">E4 - STAX 25 ton - STVM 8,8 ton/m (95)</option>
-				<option value="E5 - STAX 25 ton - STVM 10 ton/m (95)">E5 - STAX 25 ton - STVM 10 ton/m (95)</option>
-				<option value="All (M11)">All (M11)</option>
-			</axellast>
-			<riktning>
-				<option>Båda riktningar</option>
-				<option>Norrgående</option>
-				<option>Södergående</option>
-			</riktning>
+    
+    <!-- Stilar för kartan -->
+    <style>
+        .track { stroke: #4b5563; stroke-width: 4px; stroke-linecap: round; }
+        .station-name { font-size: 16px; font-weight: bold; fill: #111827; font-family: sans-serif; letter-spacing: 1px; }
+        .distance-line { stroke-width: 2px; stroke-dasharray: 4; }
+        .distance-text { font-size: 12px; font-weight: bold; font-family: sans-serif; }
+        .range-track-line { stroke: #fbbf24; stroke-width: 8px; opacity: 0.5; }
+        .km-marker { font-size: 9px; fill: #9ca3af; text-anchor: middle; font-family: sans-serif; }
+        .symbol-label { font-size: 11px; font-weight: bold; fill: #111827; text-anchor: middle; font-family: sans-serif; }
+        .track-highlight { stroke: #0078d4; stroke-width: 2px; opacity: 0.5; }
+        .offset-line { stroke: #0078d4; stroke-width: 1.5px; stroke-dasharray: 2; }
+        .offset-text { font-size: 11px; fill: #0078d4; text-anchor: middle; font-family: sans-serif; }
+        .symbol-group { cursor: pointer; }
+    </style>
 
-    </data>
+    <script id="xmlData" type="text/xml">
+        <data>
+            <taglangd>
+                <option value="Hel (95)">Hel (95)</option>
+                <option value="Front (95)">Front (95)</option>
+                <option value="Ja (M11)">Ja (M11)</option>
+                <option value="Nej (M11)">Nej (M11)</option>
+            </taglangd>
+            <axellast>
+                <option value="All (HNS gäller för alla fordon) (95)">All (HNS gäller för alla fordon) (95)</option>
+                <option value="A - STAX 16 ton - STVM 5 ton/m (95)">A - STAX 16 ton - STVM 5 ton/m (95)</option>
+                <option value="HS17 STAX 17 ton (95)">HS17 STAX 17 ton (95)</option>
+                <option value="B1 - STAX 18 ton - STVM 5 ton/m (95)">B1 - STAX 18 ton - STVM 5 ton/m (95)</option>
+                <option value="B2 - STAX 18 ton - STVM 6,4 ton/m (95)">B2 - STAX 18 ton - STVM 6,4 ton/m (95)</option>
+                <option value="C2 - STAX 20 ton - STVM 6,4 ton/m (95)">C2 - STAX 20 ton - STVM 6,4 ton/m (95)</option>
+                <option value="C3 - STAX 20 ton - STVM 7,2 ton/m (95)">C3 - STAX 20 ton - STVM 7,2 ton/m (95)</option>
+                <option value="D2 - STAX 22,5 ton - STVM 6,4 ton/m (95)">D2 - STAX 22,5 ton - STVM 6,4 ton/m (95)</option>
+                <option value="D3 - STAX 22,5 ton - STVM 7,2 ton/m (95)">D3 - STAX 22,5 ton - STVM 7,2 ton/m (95)</option>
+                <option value="D4 - STAX 22,5 ton - STVM 8 ton/m (95)">D4 - STAX 22,5 ton - STVM 8 ton/m (95)</option>
+                <option value="D4XL - STAX 22,5 ton - STVM 7,4 ton/m (95)">D4XL - STAX 22,5 ton - STVM 7,4 ton/m (95)</option>
+                <option value="E4 - STAX 25 ton - STVM 8,8 ton/m (95)">E4 - STAX 25 ton - STVM 8,8 ton/m (95)</option>
+                <option value="E5 - STAX 25 ton - STVM 10 ton/m (95)">E5 - STAX 25 ton - STVM 10 ton/m (95)</option>
+                <option value="All (M11)">All (M11)</option>
+            </axellast>
+            <riktning>
+                <option>Båda riktningar</option>
+                <option>Norrgående</option>
+                <option>Södergående</option>
+            </riktning>
+        </data>
     </script>
 </head>
-<body id="planera-page"></div><div class="card">
-
-<div class="nav-menu">
-    <a href="home.html">⬅ Tillbaka</a>
-    
-    <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
-</div>
+<body id="planera-page">
+<div class="card">
+    <div class="nav-menu">
+        <a href="home.html">⬅ Tillbaka</a>
+        <div id="user-display" style="font-size: 0.9em; color: #666;"></div> 
+    </div>
 
     <h1>Planering av hastighetsnedsättning</h1>
 
     <form id="hnsForm">
         <div class="grid">
             <div>
-    <label for="planerare">Planerare *</label>
-    <input id="planerare" name="planerare" type="text" readonly required style="background-color: #e9ecef; cursor: not-allowed;">
-</div>
+                <label for="planerare">Planerare *</label>
+                <input id="planerare" name="planerare" type="text" readonly required style="background-color: #e9ecef; cursor: not-allowed;">
+            </div>
             <div><label for="orsak">Orsak</label><input id="orsak" name="orsak" type="text" placeholder="Ange orsak till nedsättningen"></div>
             <div><label for="from">Från (Datum & Tid) *</label><input id="from" name="from" type="datetime-local" required></div>
             <div><label for="to">Till</label><input id="to" name="to" type="text" value="Tillsvidare"></div>
             <div><label for="nedstracka">Nedsättningssträcka</label><input id="nedstracka" name="nedstracka" type="text" placeholder="Ex: DP1-DP2"></div>
-            <div>
+            
+            <div class="full-width">
                 <label>Sträcka (km)</label>
-                <div class="km-row">
-                    <input name="start_km" placeholder="Km" maxlength="4"><input name="start_m" placeholder="m" maxlength="3">
+                <div class="km-row" style="margin-bottom: 10px;">
+                    <input id="plan_start_km" name="start_km" placeholder="Km" maxlength="4"><input id="plan_start_m" name="start_m" placeholder="m" maxlength="3">
                     <span class="note">→</span>
-                    <input name="slut_km" placeholder="Km" maxlength="4"><input name="slut_m" placeholder="m" maxlength="3">
+                    <input id="plan_slut_km" name="slut_km" placeholder="Km" maxlength="4"><input id="plan_slut_m" name="slut_m" placeholder="m" maxlength="3">
+                </div>
+                
+                <!-- === KARTAN === -->
+                <div class="map-container" style="border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; background: #fff; margin-bottom: 20px;">
+                    <div style="font-size:12px; color:#666; margin-bottom: 10px;">💡 <em>Dra med musen på kartan för att snabbt fylla i sträckan.</em></div>
+                    <div id="mapWrapper" style="width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
+                        <svg id="svgMap"></svg>
+                    </div>
+                    <!-- Dold men behövs för logiken i visual.js -->
+                    <div id="track-selector" style="display:none;"></div> 
                 </div>
             </div>
-            <div><label>Spår</label><input name="spar" type="text" placeholder="För vilket/vilka spår gäller nedsättningen?"></div>
+
+            <div><label>Spår</label><input id="plan_spar" name="spar" type="text" placeholder="För vilket/vilka spår gäller nedsättningen?"></div>
             <div><label>Axellast *</label><select id="axellast" name="axellast" required><option value="">Välj...</option></select></div>
             <div><label>ETCS-kategori</label><input name="etcs" type="text" value="Alla"></div>
             <div><label>Riktning *</label><select id="riktning" name="riktning" required><option value="">Välj...</option></select></div>
@@ -80,8 +106,7 @@
             <button type="submit" class="btn-primary">Skicka beställning</button>
         </div>
     </form>
-    
-    </div>
+</div>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
