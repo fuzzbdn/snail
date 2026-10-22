@@ -1,21 +1,28 @@
 import { StorageManager, Utils, getEntryStatus } from '../core/storage.js';
 import { showToast } from '../core/ui.js';
-import '../core/xml-generator.js'; // Importerar XML-logiken så knappen i HTML fungerar
-import { CSV_DATA } from '../core/data.js'; // Laddar in anläggningsdatan säkert
+import '../core/xml-generator.js'; 
+import { CSV_DATA } from '../core/data.js'; 
 
-// ==========================================
-// GLOBALA VARIABLER FÖR PROJEKTERING
-// ==========================================
+// === NYTT: Importera grafikmotorn ===
+import { initVisualMap, updateVisualRange, setSignalCallback } from './visual.js';
+
 let allCsvItems = [];
 let mainStartMeters = 0, mainEndMeters = 0;
 
-// ==========================================
-// INITIALISERING AV SIDAN
-// ==========================================
 export function initProjekteraPage() {
     setupProjekteraUI();
     initCsvData();
     initRouteTables();
+
+    // Initiera kartan
+    initVisualMap();
+
+    // Lyssna på klick från grafiken
+    setSignalCallback((symbol, type) => {
+        if (type !== 'Rensad') {
+            addGraphSignalToTable(symbol, type);
+        }
+    });
 
     document.getElementById("searchKm")?.addEventListener("input", function() {
         const val = this.value.trim();
@@ -71,7 +78,7 @@ function setupProjekteraUI() {
         
         currentEntryIndex = parseInt(idx);
         const entry = allData[currentEntryIndex];
-        if (!entry) return; // Defensiv programmering ifall posten raderats i annan flik
+        if (!entry) return; 
         
         const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v || ''; };
         
@@ -99,6 +106,9 @@ function setupProjekteraUI() {
         mainStartMeters = Utils.toMeters(`${entry.start_km}+${entry.start_m}`);
         mainEndMeters = Utils.toMeters(`${entry.slut_km}+${entry.slut_m}`);
         
+        // === NYTT: Rita upp kartan automatiskt ===
+        updateVisualRange(`${entry.start_km}+${entry.start_m}`, `${entry.slut_km}+${entry.slut_m}`);
+
         const passerarText = document.getElementById('passerarText');
         if (passerarText) passerarText.style.display = (entry.passerar === 'Ja') ? 'block' : 'none';
         
@@ -119,17 +129,14 @@ function setupProjekteraUI() {
             if (!entryToUpdate) return;
             
             let currentUser = {};
-            try {
-                currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-            } catch (e) {
-                console.error("Kunde inte läsa currentUser", e);
-            }
+            try { currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}'); } 
+            catch (e) {}
 
             entryToUpdate.stallverkstyp = document.getElementById("stallverkstyp")?.value || "";
             entryToUpdate.rbc = document.getElementById("rbc")?.value || "";
             entryToUpdate.passerar = document.getElementById("passerar")?.value || "";
-			entryToUpdate.identitet = document.getElementById("identitet")?.value || "";
-			
+            entryToUpdate.identitet = document.getElementById("identitet")?.value || "";
+            
             const savedBlocks = [];
             document.querySelectorAll(".route-block").forEach(block => {
                 const rows = [];
@@ -154,7 +161,6 @@ function setupProjekteraUI() {
             entryToUpdate.projectedDate = new Date().toISOString();
             entryToUpdate.projekteradAv = currentUser.name || "Okänd";
 
-// FIX: Hämta RÄTT tabell genom att exkludera .route-table
             const reviewTable = document.querySelector(".control-table:not(.route-table)");
             if (reviewTable) {
                 const tableRows = reviewTable.querySelectorAll("tbody tr");
@@ -164,8 +170,6 @@ function setupProjekteraUI() {
                     
                     if (sakerhetsSign) {
                         entryToUpdate.sakerhetsgranskadAv = sakerhetsSign;
-                        
-                        // Try/catch som extra säkerhetsnät så att en felaktig datumsträng aldrig kraschar spara-knappen
                         try {
                             entryToUpdate.sakerhetsgranskadDatum = sakerhetsDatum 
                                 ? new Date(sakerhetsDatum).toISOString() 
@@ -186,15 +190,36 @@ function setupProjekteraUI() {
     }
 }
 
-// ==========================================
-// DATA & TABELL-LOGIK
-// ==========================================
-function initCsvData() {
-    if (!CSV_DATA) {
-        console.error("Saknar CSV_DATA. Se till att data.js laddas och exporterar korrekt.");
-        return;
+// === NYTT: Tryck data från kartan in i tabellen ===
+function addGraphSignalToTable(symbol, type) {
+    const container = document.getElementById("routes-container");
+    let block = container.querySelector(".route-block:last-child");
+    if (!block) {
+        window.addNewRouteBlock();
+        block = container.querySelector(".route-block:last-child");
     }
     
+    const tbody = block.querySelector("tbody");
+    createRow(tbody, type); 
+    
+    const tr = tbody.lastElementChild;
+    const selects = tr.querySelectorAll("select");
+    const inputs = tr.querySelectorAll("input");
+    
+    selects[1].value = "Signal";
+    window.updateObjOpts(selects[1]);
+    
+    const csvMatch = allCsvItems.find(i => i.name === symbol.id);
+    if (csvMatch) selects[2].value = csvMatch.value; 
+    
+    inputs[0].value = `${Math.floor(symbol.pos/1000)}+${symbol.pos%1000}`;
+    inputs[1].value = symbol.offset || 0;
+    
+    window.calcOffset(inputs[0]); 
+}
+
+function initCsvData() {
+    if (!CSV_DATA) return;
     const lines = CSV_DATA.split(/\r?\n/).filter(r => r.trim());
     if (lines.length === 0) return;
     
@@ -309,9 +334,6 @@ function recalcAllRows() {
     });
 }
 
-// ==========================================
-// GLOBALA FUNKTIONER (Fäst på window för HTML-events)
-// ==========================================
 window.addNewRouteBlock = function() {
     const container = document.getElementById("routes-container");
     if (!container) return;
@@ -380,8 +402,7 @@ window.fillKm = function(el) {
             window.calcOffset(input);
         }
     } catch (e) {
-        console.error("Fel vid tolkning av JSON för kilometertal:", e);
-        showToast("Ett fel uppstod vid inläsning av data.", "error");
+        console.error("Fel:", e);
     }
 };
 
