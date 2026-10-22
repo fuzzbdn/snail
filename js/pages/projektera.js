@@ -3,7 +3,6 @@ import { showToast } from '../core/ui.js';
 import '../core/xml-generator.js'; 
 import { CSV_DATA } from '../core/data.js'; 
 
-// === NYTT: Importera grafikmotorn ===
 import { initVisualMap, updateVisualRange, setSignalCallback } from './visual.js';
 
 let allCsvItems = [];
@@ -14,10 +13,10 @@ export function initProjekteraPage() {
     initCsvData();
     initRouteTables();
 
-    // Initiera kartan
+    // Starta grafiken
     initVisualMap();
 
-    // Lyssna på klick från grafiken
+    // Skapa koppling: Klick på karta -> In i tabell
     setSignalCallback((symbol, type) => {
         if (type !== 'Rensad') {
             addGraphSignalToTable(symbol, type);
@@ -106,7 +105,6 @@ function setupProjekteraUI() {
         mainStartMeters = Utils.toMeters(`${entry.start_km}+${entry.start_m}`);
         mainEndMeters = Utils.toMeters(`${entry.slut_km}+${entry.slut_m}`);
         
-        // === NYTT: Rita upp kartan automatiskt ===
         updateVisualRange(`${entry.start_km}+${entry.start_m}`, `${entry.slut_km}+${entry.slut_m}`);
 
         const passerarText = document.getElementById('passerarText');
@@ -190,7 +188,6 @@ function setupProjekteraUI() {
     }
 }
 
-// === NYTT: Tryck data från kartan in i tabellen ===
 function addGraphSignalToTable(symbol, type) {
     const container = document.getElementById("routes-container");
     let block = container.querySelector(".route-block:last-child");
