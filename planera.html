@@ -64,48 +64,99 @@
 
     <form id="hnsForm">
         <div class="grid">
+            
+            <!-- RAD 1 -->
             <div>
                 <label for="planerare">Planerare *</label>
                 <input id="planerare" name="planerare" type="text" readonly required style="background-color: #e9ecef; cursor: not-allowed;">
             </div>
-            <div><label for="orsak">Orsak</label><input id="orsak" name="orsak" type="text" placeholder="Ange orsak till nedsättningen"></div>
-            <div><label for="from">Från (Datum & Tid) *</label><input id="from" name="from" type="datetime-local" required></div>
-            <div><label for="to">Till</label><input id="to" name="to" type="text" value="Tillsvidare"></div>
-            <div><label for="nedstracka">Nedsättningssträcka</label><input id="nedstracka" name="nedstracka" type="text" placeholder="Ex: DP1-DP2"></div>
+            <div>
+                <label for="orsak">Orsak</label>
+                <input id="orsak" name="orsak" type="text" placeholder="Ange orsak till nedsättningen">
+            </div>
             
-            <div class="full-width">
+            <!-- RAD 2 -->
+            <div>
+                <label for="from">Från (Datum & Tid) *</label>
+                <input id="from" name="from" type="datetime-local" required>
+            </div>
+            <div>
+                <label for="to">Till</label>
+                <input id="to" name="to" type="text" value="Tillsvidare">
+            </div>
+
+            <!-- RAD 3: Sida vid sida -->
+            <div>
+                <label for="nedstracka">Nedsättningssträcka</label>
+                <input id="nedstracka" name="nedstracka" type="text" placeholder="Ex: DP1-DP2">
+            </div>
+            <div>
                 <label>Sträcka (km)</label>
-                <div class="km-row" style="margin-bottom: 10px;">
+                <div class="km-row">
                     <input id="plan_start_km" name="start_km" placeholder="Km" maxlength="4"><input id="plan_start_m" name="start_m" placeholder="m" maxlength="3">
                     <span class="note">→</span>
                     <input id="plan_slut_km" name="slut_km" placeholder="Km" maxlength="4"><input id="plan_slut_m" name="slut_m" placeholder="m" maxlength="3">
                 </div>
-                
-<!-- === KARTAN === -->
-<div class="map-container" style="border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; background: #fff; margin-bottom: 20px;">
-    <div style="font-size:12px; color:#666; margin-bottom: 15px;">💡 <em>Dra med musen på kartan för att snabbt fylla i sträckan.</em></div>
-    
-    <!-- Spårvalet är tillbaka och synligt! -->
-    <div style="margin-bottom: 15px;">
-        <label style="display:block; font-size:11px; color:#666; text-transform:uppercase; margin-bottom:5px; font-weight:bold;">Spårval (Visuellt)</label>
-        <div id="track-selector" style="padding:10px; border:1px solid #ccc; border-radius:4px; display:flex; gap:15px; color:#999; font-size:13px; background-color: #fcfcfc;">
-            Markera en sträcka på kartan för att välja spår...
-        </div>
-    </div>
+            </div>
+            
+            <!-- RAD 4: Kartan i fullbredd -->
+            <div class="full-width">
+                <div class="map-container" style="border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; background: #fff; margin-top: 5px; margin-bottom: 20px;">
+                    <div style="font-size:12px; color:#666; margin-bottom: 15px;">💡 <em>Dra med musen på kartan för att snabbt fylla i sträckan.</em></div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:block; font-size:11px; color:#666; text-transform:uppercase; margin-bottom:5px; font-weight:bold;">Spårval (Visuellt)</label>
+                        <div id="track-selector" style="padding:10px; border:1px solid #ccc; border-radius:4px; display:flex; gap:15px; color:#999; font-size:13px; background-color: #fcfcfc;">
+                            Markera en sträcka på kartan för att välja spår...
+                        </div>
+                    </div>
 
-    <div id="mapWrapper" style="width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
-        <svg id="svgMap"></svg>
-    </div>
-</div>
+                    <div id="mapWrapper" style="width: 100%; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
+                        <svg id="svgMap"></svg>
+                    </div>
+                </div>
+            </div>
 
-            <div><label>Spår</label><input id="plan_spar" name="spar" type="text" placeholder="För vilket/vilka spår gäller nedsättningen?"></div>
-            <div><label>Axellast *</label><select id="axellast" name="axellast" required><option value="">Välj...</option></select></div>
-            <div><label>ETCS-kategori</label><input name="etcs" type="text" value="Alla"></div>
-            <div><label>Riktning *</label><select id="riktning" name="riktning" required><option value="">Välj...</option></select></div>
-            <div><label>Tåglängdsfördröjning *</label><select id="taglangd" name="taglangd" required><option value="">Välj...</option></select></div>
-            <div><label>STH (km/h)</label><input name="sth" type="number" placeholder="Ange största tillåtna hastighet"></div>
-            <div class="full-width"><label>Text till tåg</label><textarea name="textmeddelande">Dåligt spårläge</textarea></div>
-            <div class="full-width"><label>Info till systemtekniker</label><textarea name="systeminfo" placeholder="Ange om det finns information som systemtekniker behöver få veta"></textarea></div>
+            <!-- RAD 5 -->
+            <div>
+                <label>Spår</label>
+                <input id="plan_spar" name="spar" type="text" placeholder="För vilket/vilka spår gäller nedsättningen?">
+            </div>
+            <div>
+                <label>Riktning *</label>
+                <select id="riktning" name="riktning" required><option value="">Välj...</option></select>
+            </div>
+
+            <!-- RAD 6 -->
+            <div>
+                <label>STH (km/h)</label>
+                <input name="sth" type="number" placeholder="Ange största tillåtna hastighet">
+            </div>
+            <div>
+                <label>Axellast *</label>
+                <select id="axellast" name="axellast" required><option value="">Välj...</option></select>
+            </div>
+
+            <!-- RAD 7 -->
+            <div>
+                <label>ETCS-kategori</label>
+                <input name="etcs" type="text" value="Alla">
+            </div>
+            <div>
+                <label>Tåglängdsfördröjning *</label>
+                <select id="taglangd" name="taglangd" required><option value="">Välj...</option></select>
+            </div>
+
+            <!-- RAD 8 & 9: Fullbreddsfält -->
+            <div class="full-width">
+                <label>Text till tåg</label>
+                <textarea name="textmeddelande">Dåligt spårläge</textarea>
+            </div>
+            <div class="full-width">
+                <label>Info till systemtekniker</label>
+                <textarea name="systeminfo" placeholder="Ange om det finns information som systemtekniker behöver få veta"></textarea>
+            </div>
+            
         </div>
 
         <div class="actions">
